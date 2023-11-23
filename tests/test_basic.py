@@ -126,7 +126,7 @@ def test_basic_integer_type(type_prefix: str, type_number: int):
         assert err.args[0] == f"Invalid integer type: {type_number}"
 
 
-def test_unkown_basic_type():
+def test_unkown_basic_type_nested_decode():
     # Given
     type_name = "List<TokenIdentifier>"
 
@@ -150,7 +150,7 @@ def test_extract_from_size():
     assert data == b"\xaa\xaa\xaa"
 
 
-def test_wrong_bool():
+def test_wrong_bool_nested_decode():
     # Given
     data = b"\x02"
 
@@ -160,3 +160,84 @@ def test_wrong_bool():
         raise RuntimeError("Above line should raise an error")
     except ValueError as err:
         assert err.args[0] == "Expected a boolean but found the value 2"
+
+
+@pytest.mark.parametrize(
+    "type_name, data, expected_result",
+    [
+        ("u32", b"\x00\x00\x00\x0A", 10),
+        ("u32", b"\xF0\x00\x00\x0A", 4026531850),
+        ("u8", b"\x00", 0),
+        ("usize", b"\x08", 8),
+        ("u16", b"\x01\x04", 260),
+        ("i32", b"\x00\x00\x00\x0A", 10),
+        ("i32", b"\xF0\x00\x00\x0A", -268435446),
+        ("i8", b"\x00", 0),
+        ("isize", b"\x0F", 15),
+        ("i16", b"\x01\x04", 260),
+        ("BigUint", b"\x01\xa2", 418),
+        ("BigInt", b"\x81\xa2", -32350),
+        ("bool", b"\x01", True),
+        ("utf-8 string", b"heythisisastring", "heythisisastring"),
+        (
+            "TokenIdentifier",
+            b"TKN-abcdef",
+            "TKN-abcdef",
+        ),
+        (
+            "EgldOrEsdtTokenIdentifier",
+            b"EGLD",
+            "EGLD",
+        ),
+    ],
+)
+def test_top_decode_basic(
+    type_name: str, data: bytes, expected_result: Tuple[int, bytes]
+):
+    # Given
+    # When
+    result = basic_type.top_decode_basic(type_name, data)
+
+    # Then
+    assert expected_result == result
+
+
+def test_wrong_bool_top_decode():
+    # Given
+    data = b"\x02"
+
+    # When
+    try:
+        basic_type.top_decode_basic("bool", data)
+        raise RuntimeError("Above line should raise an error")
+    except ValueError as err:
+        assert err.args[0] == "Expected a boolean but found the value 2"
+
+
+def test_unkown_basic_type_top_decode():
+    # Given
+    type_name = "List<TokenIdentifier>"
+
+    # When
+    try:
+        basic_type.top_decode_basic(type_name, b"")
+        raise RuntimeError("Above line should raise an error")
+    except ValueError as err:
+        assert err.args[0] == f"Unkown basic type {type_name}"
+
+
+def test_top_decode_address():
+    # Given
+    data = (
+        b"\x00\x00\x00\x00\x00\x00\x00\x00\x05\x00\xed\xd3"
+        b"\xb6W\xa1\xe3~$u\xc8\xc3\x02\xa1\x0fTj\xf8\x90'd\xd7Y"
+    )
+    expected_bech32_address = (
+        "erd1qqqqqqqqqqqqqpgqahfmv4apudlzgawgcvp2zr65dtufqfmy6avsazkewu"
+    )
+
+    # When
+    result = basic_type.top_decode_basic("Address", data)
+
+    # Then
+    assert expected_bech32_address == result.bech32()

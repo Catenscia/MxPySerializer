@@ -119,3 +119,38 @@ def nested_decode_basic(
         return element.decode("utf-8"), data
 
     raise ValueError(f"Unkown basic type {type_name}")
+
+
+def top_decode_basic(type_name: str, data: bytes) -> Union[int, str, bool, Address]:
+    """
+    Decodes the input data into a basic type assuming a top-encoded
+    format.
+    In contrast to the function nested_decode_basic, all the provided data is
+    converted, there are no left-over bytes.
+
+    :param type_name: name of the type of the value to extract from the data
+    :type type_name: str
+    :param data: data containing the value to extract
+    :type data: bytes
+    :return: decoded value
+    :rtype: Union[int, str, bool]
+    """
+    if type_name == "bool":
+        value = int.from_bytes(data)
+        if value not in (0, 1):
+            raise ValueError(f"Expected a boolean but found the value {value}")
+        return bool(value)
+
+    if type_name in ("usize", "u8", "u16", "u32", "u64", "BigUint"):
+        return int.from_bytes(data)
+
+    if type_name in ("isize", "i8", "i16", "i32", "i64", "BigInt"):
+        return int.from_bytes(data, signed=True)
+
+    if type_name == "Address":
+        return Address.from_hex(data.hex(), "erd")
+
+    if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
+        return data.decode("utf-8")
+
+    raise ValueError(f"Unkown basic type {type_name}")
