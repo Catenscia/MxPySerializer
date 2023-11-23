@@ -25,6 +25,7 @@ BASIC_TYPES = (
     "BigUint",
     "Address",
     "TokenIdentifier",
+    "EgldOrEsdtTokenIdentifier",
     "utf-8 string",
 )
 
@@ -112,5 +113,9 @@ def nested_decode_basic(
     if type_name == "Address":
         hex_address, data = data[:32].hex(), data[32:]
         return Address.from_hex(hex_address, "erd"), data
+
+    if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
+        element, data = get_bytes_element_from_size(data)
+        return element.decode("utf-8"), data
 
     raise ValueError(f"Unkown basic type {type_name}")

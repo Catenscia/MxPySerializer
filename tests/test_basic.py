@@ -61,6 +61,21 @@ def test_nested_decode_integer_data_too_small():
         ("BigUint", b"\x00\x00\x00\x02\x01\xa2\xaa\xaa\xaa", (418, b"\xaa\xaa\xaa")),
         ("BigInt", b"\x00\x00\x00\x02\x81\xa2\xaa\xaa\xaa", (-32350, b"\xaa\xaa\xaa")),
         ("bool", b"\x01\x0a", (True, b"\x0a")),
+        (
+            "utf-8 string",
+            b"\x00\x00\x00\x10heythisisastring\x01\x0a\xaa\xaa",
+            ("heythisisastring", b"\x01\x0a\xaa\xaa"),
+        ),
+        (
+            "TokenIdentifier",
+            b"\x00\x00\x00\x0ATKN-abcdef\x01\x0a\xaa\xaa",
+            ("TKN-abcdef", b"\x01\x0a\xaa\xaa"),
+        ),
+        (
+            "EgldOrEsdtTokenIdentifier",
+            b"\x00\x00\x00\x04EGLD\x01\x0a\xaa\xaa",
+            ("EGLD", b"\x01\x0a\xaa\xaa"),
+        ),
     ],
 )
 def test_nested_decode_basic(
