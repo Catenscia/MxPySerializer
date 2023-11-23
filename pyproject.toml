@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+
+[project]
+name = "mxpyserializer"
+version = "0.1.0-dev0"
+authors = [
+  {name="Etienne Wallet"},
+]
+description = "Python package that serialize and deserialize MultiversX data format by using ABI definitions"
+readme = "README.md"
+keywords = ["elrond", "multiversx", "smart-contract", "ABI", "data", "serialize"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+requires-python = ">=3.10"
+dynamic = ["dependencies"]
+
+[project.scripts]
+mxpyserializer = "mxpyserializer.__main__:main"
+
+[project.urls]
+"Homepage" = "https://github.com/Catenscia/MxPySerializer"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["mxpyserializer*"]
+namespaces = false
+
+[tool.setuptools.package-data]
+"*" = ["*.txt", "*.ini"]
+
+[tool.setuptools.dynamic]
+dependencies = {file = ["requirements.txt"]}
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore:ssl.PROTOCOL_TLS is deprecated:DeprecationWarning",
+    "ignore:ssl.match_hostname\\(\\) is deprecated:DeprecationWarning",
+]
