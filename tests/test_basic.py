@@ -74,6 +74,24 @@ def test_nested_decode_basic(
     assert expected_result == result
 
 
+def test_nested_decode_address():
+    # Given
+    data = (
+        b"\x00\x00\x00\x00\x00\x00\x00\x00\x05\x00\xed\xd3"
+        b"\xb6W\xa1\xe3~$u\xc8\xc3\x02\xa1\x0fTj\xf8\x90'd\xd7Y\xab\xcd\xef"
+    )
+    expected_bech32_address = (
+        "erd1qqqqqqqqqqqqqpgqahfmv4apudlzgawgcvp2zr65dtufqfmy6avsazkewu"
+    )
+    expected_remaining_data = b"\xab\xcd\xef"
+    # When
+    result, remaining_data = basic_type.nested_decode_basic("Address", data)
+
+    # Then
+    assert expected_bech32_address == result.bech32()
+    assert expected_remaining_data == remaining_data
+
+
 @pytest.mark.parametrize(
     "type_prefix",
     ["u", "i"],

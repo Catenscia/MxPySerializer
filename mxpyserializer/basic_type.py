@@ -4,8 +4,9 @@ author: Etienne Wallet
 This module contains the functions to serialize and deserialize basic types
 """
 import re
-
 from typing import Tuple, Union
+
+from multiversx_sdk_core.address import Address
 
 BASIC_TYPES = (
     "bytes",
@@ -73,7 +74,7 @@ def nested_decode_integer(
 
 def nested_decode_basic(
     type_name: str, data: bytes
-) -> Tuple[Union[int, str, bool], bytes]:
+) -> Tuple[Union[int, str, bool, Address], bytes]:
     """
     Decodes a part of the input data into a basic type assuming a nested-encoded
     format. Returns the left over.
@@ -85,13 +86,13 @@ def nested_decode_basic(
     :return: decoded value and the left over bytes
     :rtype: Tuple[Union[int, str, bool], bytes]
     """
-
-    integer_pattern = re.match(r"^([ui])(\d+)$", type_name.replace("size", "8"))
     if type_name == "bool":
         value, data = nested_decode_basic("u8", data)
         if value not in (0, 1):
             raise ValueError(f"Expected a boolean but found the value {value}")
         return bool(value), data
+
+    integer_pattern = re.match(r"^([ui])(\d+)$", type_name.replace("size", "8"))
     if integer_pattern is not None:
         groups = integer_pattern.groups()
         signed = groups[0] == "i"
@@ -100,10 +101,16 @@ def nested_decode_basic(
             raise ValueError(f"Invalid integer type: {type_number}")
         type_bytes_length = type_number // 8
         return nested_decode_integer(data, type_bytes_length, signed)
+
     if type_name == "BigUint":
         element, data = get_bytes_element_from_size(data)
         return int.from_bytes(element), data
     if type_name == "BigInt":
         element, data = get_bytes_element_from_size(data)
         return int.from_bytes(element, signed=True), data
+
+    if type_name == "Address":
+        hex_address, data = data[:32].hex(), data[32:]
+        return Address.from_hex(hex_address, "erd"), data
+
     raise ValueError(f"Unkown basic type {type_name}")
