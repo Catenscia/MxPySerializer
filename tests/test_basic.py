@@ -58,6 +58,8 @@ def test_nested_decode_integer_data_too_small():
         ("i8", b"\x00\x00\x00\x0A", (0, b"\x00\x00\x0A")),
         ("isize", b"\x0F\x00\x00\x0A", (15, b"\x00\x00\x0A")),
         ("i16", b"\x01\x04\xEF\x0A", (260, b"\xEF\x0A")),
+        ("BigUint", b"\x00\x00\x00\x02\x01\xa2\xaa\xaa\xaa", (418, b"\xaa\xaa\xaa")),
+        ("BigInt", b"\x00\x00\x00\x02\x81\xa2\xaa\xaa\xaa", (-32350, b"\xaa\xaa\xaa")),
     ],
 )
 def test_nested_decode_basic(
@@ -100,3 +102,15 @@ def test_unkown_basic_type():
         raise RuntimeError("Above line should raise an error")
     except ValueError as err:
         assert err.args[0] == f"Unkown basic type {type_name}"
+
+
+def test_extract_from_size():
+    # Given
+    data = b"\x00\x00\x00\x08\x15d\x89u\x84V\x98B\xaa\xaa\xaa"
+
+    # When
+    element, data = basic_type.get_bytes_element_from_size(data)
+
+    # Then
+    assert element == b"\x15d\x89u\x84V\x98B"
+    assert data == b"\xaa\xaa\xaa"

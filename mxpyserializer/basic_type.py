@@ -7,6 +7,41 @@ import re
 
 from typing import Tuple
 
+BASIC_TYPES = (
+    "bytes",
+    "bool",
+    "usize",
+    "u8",
+    "u16",
+    "u32",
+    "u64",
+    "isize",
+    "i8",
+    "i16",
+    "i32",
+    "i64",
+    "BigInt",
+    "BigUint",
+    "Address",
+    "TokenIdentifier",
+    "utf-8 string",
+)
+
+
+def get_bytes_element_from_size(data: bytes) -> Tuple[bytes, bytes]:
+    """
+    Extract an element from the data by assuming that the first part of the data
+    is the encoded size (usize) of the element we are looking for.
+    (data = <size><element><left_over>)
+
+    :param data: bytes data to extract a part from
+    :type data: bytes
+    :return: extracted part and the left over part
+    :rtype: Tuple[bytes, bytes]
+    """
+    element_size, data = nested_decode_basic("u32", data)
+    return data[:element_size], data[element_size:]
+
 
 def nested_decode_integer(
     data: bytes, type_bytes_length: int, signed: bool
@@ -30,7 +65,7 @@ def nested_decode_integer(
         )
 
     return (
-        int.from_bytes(data[:type_bytes_length], byteorder="big", signed=signed),
+        int.from_bytes(data[:type_bytes_length], signed=signed),
         data[type_bytes_length:],
     )
 
@@ -57,4 +92,10 @@ def nested_decode_basic(type_name: str, data: bytes) -> Tuple[int, bytes]:
             raise ValueError(f"Invalid integer type: {type_number}")
         type_bytes_length = type_number // 8
         return nested_decode_integer(data, type_bytes_length, signed)
+    if type_name == "BigUint":
+        element, data = get_bytes_element_from_size(data)
+        return int.from_bytes(element), data
+    if type_name == "BigInt":
+        element, data = get_bytes_element_from_size(data)
+        return int.from_bytes(element, signed=True), data
     raise ValueError(f"Unkown basic type {type_name}")
