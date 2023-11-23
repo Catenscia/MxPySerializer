@@ -11,7 +11,6 @@ def main():
     execution. It will use the arguments provided by the user to execute the
     intendend functions.
     """
-    pass
 
 
 if __name__ == "__main__":
