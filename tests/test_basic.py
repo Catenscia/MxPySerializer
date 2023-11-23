@@ -40,8 +40,8 @@ def test_nested_decode_integer_data_too_small():
         raise RuntimeError("Above line should raise an error")
     except ValueError as err:
         assert (
-            err.args[0]
-            == f"Not enough data to decode {data} into an integer of length {type_bytes_length}"
+            err.args[0] == f"Not enough data to decode {data} into an "
+            f"integer of length {type_bytes_length}"
         )
 
 
@@ -60,6 +60,7 @@ def test_nested_decode_integer_data_too_small():
         ("i16", b"\x01\x04\xEF\x0A", (260, b"\xEF\x0A")),
         ("BigUint", b"\x00\x00\x00\x02\x01\xa2\xaa\xaa\xaa", (418, b"\xaa\xaa\xaa")),
         ("BigInt", b"\x00\x00\x00\x02\x81\xa2\xaa\xaa\xaa", (-32350, b"\xaa\xaa\xaa")),
+        ("bool", b"\x01\x0a", (True, b"\x0a")),
     ],
 )
 def test_nested_decode_basic(
@@ -114,3 +115,15 @@ def test_extract_from_size():
     # Then
     assert element == b"\x15d\x89u\x84V\x98B"
     assert data == b"\xaa\xaa\xaa"
+
+
+def test_wrong_bool():
+    # Given
+    data = b"\x02"
+
+    # When
+    try:
+        basic_type.nested_decode_basic("bool", data)
+        raise RuntimeError("Above line should raise an error")
+    except ValueError as err:
+        assert err.args[0] == "Expected a boolean but found the value 2"

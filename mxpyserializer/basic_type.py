@@ -5,7 +5,7 @@ This module contains the functions to serialize and deserialize basic types
 """
 import re
 
-from typing import Tuple
+from typing import Tuple, Union
 
 BASIC_TYPES = (
     "bytes",
@@ -47,8 +47,8 @@ def nested_decode_integer(
     data: bytes, type_bytes_length: int, signed: bool
 ) -> Tuple[int, bytes]:
     """
-    Decodes a part of the input data into an unsigned integer value assuming big endian format,
-    nested-encoded format. Returns the left over
+    Decodes a part of the input data into an unsigned integer value assuming big endian
+    and nested-encoded format. Returns the left over
 
     :param data: bytes to decode
     :type data: bytes
@@ -61,7 +61,8 @@ def nested_decode_integer(
     """
     if len(data) < type_bytes_length:
         raise ValueError(
-            f"Not enough data to decode {data} into an integer of length {type_bytes_length}"
+            f"Not enough data to decode {data} into an integer "
+            f"of length {type_bytes_length}"
         )
 
     return (
@@ -70,7 +71,9 @@ def nested_decode_integer(
     )
 
 
-def nested_decode_basic(type_name: str, data: bytes) -> Tuple[int, bytes]:
+def nested_decode_basic(
+    type_name: str, data: bytes
+) -> Tuple[Union[int, str, bool], bytes]:
     """
     Decodes a part of the input data into a basic type assuming a nested-encoded
     format. Returns the left over.
@@ -80,10 +83,15 @@ def nested_decode_basic(type_name: str, data: bytes) -> Tuple[int, bytes]:
     :param data: data containing the value to extract
     :type data: bytes
     :return: decoded value and the left over bytes
-    :rtype: Tuple[int, bytes]
+    :rtype: Tuple[Union[int, str, bool], bytes]
     """
 
     integer_pattern = re.match(r"^([ui])(\d+)$", type_name.replace("size", "8"))
+    if type_name == "bool":
+        value, data = nested_decode_basic("u8", data)
+        if value not in (0, 1):
+            raise ValueError(f"Expected a boolean but found the value {value}")
+        return bool(value), data
     if integer_pattern is not None:
         groups = integer_pattern.groups()
         signed = groups[0] == "i"
