@@ -112,7 +112,7 @@ def nested_decode_basic(
 
     if type_name == "Address":
         hex_address, data = data[:32].hex(), data[32:]
-        return Address.from_hex(hex_address, "erd"), data
+        return Address.from_hex(hex_address, "erd").bech32(), data
 
     if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
         element, data = get_bytes_element_from_size(data)
@@ -148,7 +148,7 @@ def top_decode_basic(type_name: str, data: bytes) -> Union[int, str, bool, Addre
         return int.from_bytes(data, signed=True)
 
     if type_name == "Address":
-        return Address.from_hex(data.hex(), "erd")
+        return Address.from_hex(data.hex(), "erd").bech32()
 
     if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
         return data.decode("utf-8")
