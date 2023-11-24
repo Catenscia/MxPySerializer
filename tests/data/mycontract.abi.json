@@ -1,0 +1,121 @@
+{
+    "buildInfo": {},
+    "docs": [
+        "custom ABI that does not correspond to a real contrat"
+    ],
+    "name": "MyContract",
+    "constructor": {
+        "inputs": [],
+        "outputs": []
+    },
+    "endpoints": [
+        {
+            "name": "getSum",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "Add desired amount to the storage variable."
+            ],
+            "name": "add",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "value",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
+        }
+    ],
+    "events": [],
+    "esdtAttributes": [],
+    "hasCallback": false,
+    "types": {
+        "MyAbiStruct": {
+            "type": "struct",
+            "docs": [
+                "ABI example of a struct."
+            ],
+            "fields": [
+                {
+                    "docs": [
+                        "Fields can also have docs."
+                    ],
+                    "name": "field1",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "field2",
+                    "type": "List<Option<u32>>"
+                },
+                {
+                    "name": "field3",
+                    "type": "tuple<bool, i32>"
+                }
+            ]
+        },
+        "MyAbiStruct2": {
+            "type": "struct",
+            "docs": [
+                "ABI example of a struct."
+            ],
+            "fields": [
+                {
+                    "name": "field1",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "field2",
+                    "type": "List<u32>"
+                },
+                {
+                    "name": "field3",
+                    "type": "tuple<bool, TokenIdentifier>"
+                }
+            ]
+        },
+        "MyAbiEnum": {
+            "type": "enum",
+            "docs": [
+                "ABI example of an enum."
+            ],
+            "variants": [
+                {
+                    "name": "Nothing",
+                    "discriminant": 0
+                },
+                {
+                    "name": "Something",
+                    "discriminant": 1,
+                    "fields": [
+                        {
+                            "name": "0",
+                            "type": "i32"
+                        }
+                    ]
+                },
+                {
+                    "name": "SomethingMore",
+                    "discriminant": 2,
+                    "fields": [
+                        {
+                            "name": "0",
+                            "type": "u8"
+                        },
+                        {
+                            "name": "1",
+                            "type": "MyAbiStruct2"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
