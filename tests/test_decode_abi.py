@@ -86,9 +86,23 @@ def test_decode_enum(enum_name: str, data: bytes, expected_results: Dict):
                 "field3": [True, "TKN-abcdef"],
             },
         ),
+        (
+            "MyAbiStruct",
+            (
+                b"\x00\x00\x00\x02\x1E\xA5"
+                b"\x00\x00\x00\x03\x00\x01\x00\x00\x00\x01\x00"
+                b"\x00"
+                b"\xFF\xFF\xFF\xFF"
+            ),
+            {
+                "field1": 7845,
+                "field2": [None, 1, None],
+                "field3": [False, -1],
+            },
+        ),
     ],
 )
-def test_nested_decode(struct_name: str, data: bytes, expected_results: Dict):
+def test_decode_struct(struct_name: str, data: bytes, expected_results: Dict):
     # Given
     file_path = Path("tests/data/mycontract.abi.json")
     abi_serializer = AbiSerializer.from_abi(file_path)
@@ -126,9 +140,21 @@ def test_nested_decode(struct_name: str, data: bytes, expected_results: Dict):
             [1, 2, 3, 4, 5],
             b"\x1E\xA5",
         ),
+        (
+            "Option<BigUint>",
+            b"\x01\x00\x00\x00\x02\x00\x10\x02\x03\x04\x05\x1E\xA5",
+            16,
+            b"\x02\x03\x04\x05\x1E\xA5",
+        ),
+        (
+            "Option<BigUint>",
+            b"\x00\x00\x00\x00\x02\x00\x10\x02\x03\x04\x05\x1E\xA5",
+            None,
+            b"\x00\x00\x00\x02\x00\x10\x02\x03\x04\x05\x1E\xA5",
+        ),
     ],
 )
-def test_decode_struct(
+def test_nested_decode(
     type_name: str, data: bytes, expected_results: Any, expected_left_over_data: bytes
 ):
     # Given

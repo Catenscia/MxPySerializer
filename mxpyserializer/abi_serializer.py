@@ -223,6 +223,14 @@ class AbiSerializer:
             inner_types = tuple_pattern.groups()[0].replace(" ", "").split(",")
             return self.nested_decode_iterable(inner_types, data)
 
+        option_pattern = re.match(r"^Option<(.*)>$", type_name)
+        if option_pattern is not None:
+            is_some, data = basic_type.nested_decode_basic("bool", data)
+            if is_some:
+                inner_type_name = option_pattern.groups()[0]
+                return self.nested_decode(inner_type_name, data)
+            return None, data
+
         if type_name in self.structs:
             return self.decode_custom_struct(type_name, data)
 
