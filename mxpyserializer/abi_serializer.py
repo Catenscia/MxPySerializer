@@ -9,7 +9,7 @@ import json
 
 from pathlib import Path
 import re
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from mxpyserializer import basic_type
 from mxpyserializer.data_models import AbiEndpoint, AbiField, AbiStruct, AbiEnum
@@ -94,6 +94,23 @@ class AbiSerializer:
             result, data = self.nested_decode(inner_type, data)
             decoded_values.append(result)
         return decoded_values, data
+
+    def top_decode_iterable(self, inner_type: str, data: bytes) -> List[Any]:
+        """
+        Decodes a part of the input data as a concatenation of top encoded elements.
+
+        :param inner_type: type of the concatenated elements to retrieve
+        :type inner_type: str
+        :param data: data containing the values to extract
+        :type data: bytes
+        :return: list of decoded values
+        :rtype: List[Any]
+        """
+        decoded_values = []
+        while len(data) > 0:
+            result, data = self.nested_decode(inner_type, data)
+            decoded_values.append(result)
+        return decoded_values
 
     def nested_decode_fields(
         self, fields: List[AbiField], data: bytes
@@ -238,3 +255,62 @@ class AbiSerializer:
             return self.decode_custom_enum(type_name, data)
 
         raise ValueError(f"Unkown type {type_name}")
+
+    def top_decode(self, type_name: str, data: Union[List[bytes], bytes]) -> Any:
+        """
+        Decodes a part of the input data assuming a top-encoded
+        format
+
+        :param type_name: name of the type of the value to extract from the data
+        :type type_name: str
+        :param data: data containing the value to extract
+        :type data: bytes
+        :return: decoded value
+        :rtype: Any
+        """
+        if isinstance(data, List):
+            variadic_multi_pattern = re.match(r"^variadic<multi<(.*)>>$", type_name)
+            if variadic_multi_pattern is not None:
+                inner_types = (
+                    variadic_multi_pattern.groups()[0].replace(" ", "").split(",")
+                )
+                if len(data) % len(inner_types) != 0:
+                    raise ValueError(
+                        f"Number of elements ({len(data)}) is not coherent with"
+                        f" the multi value size ({len(inner_types)})"
+                    )
+                results = []
+                while len(data) > 0:
+                    sub_results = []
+                    for inner_type in inner_types:
+                        sub_results.append(self.top_decode(inner_type, data.pop(0)))
+                    results.append(sub_results)
+                return results
+
+            variadic_pattern = re.match(r"^variadic<(.*)>$", type_name)
+            if variadic_pattern is not None:
+                inner_type = variadic_pattern.groups()[0]
+                return [self.top_decode(inner_type, sd) for sd in data]
+
+            # at this point, the data should not be a list of bytes
+            if len(data) == 1:
+                data = data[0]
+            else:
+                raise ValueError(f"Data should not be a list for type {type_name}")
+
+        if type_name in basic_type.BASIC_TYPES:
+            return basic_type.top_decode_basic(type_name, data)
+
+        list_pattern = re.match(r"^List<(.*)>$", type_name)
+        if list_pattern is not None:
+            inner_type_name = list_pattern.groups()[0]
+            return self.top_decode_iterable(inner_type_name, data)
+
+        if type_name.startswith("Option") and len(data) == 0:
+            return None
+
+        # for other cases, we can directly use the nested_decode function
+        result, data = self.nested_decode(type_name, data)
+        if len(data) != 0:
+            raise ValueError(f"Some left over bytes were not decoded: {data}")
+        return result
