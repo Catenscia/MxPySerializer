@@ -16,8 +16,8 @@ class AbiEndpoint:
 
     name: str
     mutability: str
-    inputs: List
-    outputs: List
+    inputs: List[Dict]
+    outputs: List[Dict]
     docs: List[str]
 
     @staticmethod

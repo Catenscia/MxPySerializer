@@ -11,6 +11,10 @@ from pathlib import Path
 import re
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+from multiversx_sdk_network_providers.contract_query_response import (
+    ContractQueryResponse,
+)
+
 from mxpyserializer import basic_type
 from mxpyserializer.data_models import AbiEndpoint, AbiField, AbiStruct, AbiEnum
 
@@ -314,3 +318,39 @@ class AbiSerializer:
         if len(data) != 0:
             raise ValueError(f"Some left over bytes were not decoded: {data}")
         return result
+
+    def decode_contract_query_response(
+        self, query_response: ContractQueryResponse, endpoint_name: str
+    ) -> Any:
+        """
+        Decode the response of a contract query by relying on the ABI definition
+
+        :param query_response: response from the contract query
+        :type query_response: ContractQueryResponse
+        :param endpoint_name: name of the endpoint that was called during the query
+        :type endpoint_name: str
+        :return: decoded results
+        :rtype: Any
+        """
+        try:
+            endpoint = self.endpoints[endpoint_name]
+        except KeyError as err:
+            raise ValueError(f"Unknown endpoint {endpoint_name}") from err
+        bytes_data_parts = query_response.get_return_data_parts()
+        decoded_results = []
+        for output in endpoint.outputs:
+            is_multiresults = output.get("multi_result", False)
+            if is_multiresults:
+                bytes_data, bytes_data_parts = bytes_data_parts, []
+            elif len(bytes_data_parts) == 0:  # optional value case
+                bytes_data = b""
+            else:
+                bytes_data = bytes_data_parts.pop(0)
+            decoded_output = self.top_decode(output["type"], bytes_data)
+            if is_multiresults:
+                decoded_results.extend(decoded_output)
+            else:
+                decoded_results.append(decoded_output)
+        if len(bytes_data_parts) > 0:
+            raise ValueError(f"Endpoint {endpoint_name} return more data than expected")
+        return decoded_results

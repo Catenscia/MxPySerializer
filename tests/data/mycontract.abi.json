@@ -32,6 +32,20 @@
                 }
             ],
             "outputs": []
+        },
+        {
+            "name": "getPairs",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u32"
+                },
+                {
+                    "type": "variadic<Pair>",
+                    "multi_result": true
+                }
+            ]
         }
     ],
     "events": [],
@@ -95,6 +109,10 @@
                 {
                     "name": "enabled",
                     "type": "bool"
+                },
+                {
+                    "name": "owner",
+                    "type": "Address"
                 },
                 {
                     "name": "first_token_id",
