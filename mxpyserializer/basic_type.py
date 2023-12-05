@@ -7,6 +7,7 @@ import re
 from typing import Tuple, Union
 
 from multiversx_sdk_core.address import Address
+from multiversx_sdk_core.constants import INTEGER_MAX_NUM_BYTES
 
 BASIC_TYPES = (
     "bytes",
@@ -73,6 +74,51 @@ def nested_decode_integer(
     )
 
 
+def nested_encode_integer(value: int, type_bytes_length: int, signed: bool) -> bytes:
+    """
+    Encode an integer in a nested encoded format
+
+    :param value: integer to encode
+    :type value: int
+    :param type_bytes_length: bytes length of the wanted result
+    :type type_bytes_length: int
+    :param signed: if the data should be encoded as a signed integer
+    :type signed: bool
+    :return: encoded value
+    :rtype: bytes
+    """
+    if not signed and value < 0:
+        raise ValueError("Can not encode a negative number as an unsigned integer")
+    return int(value).to_bytes(type_bytes_length, byteorder="big", signed=signed)
+
+
+def top_encode_integer(value: int, signed: bool) -> bytes:
+    """
+    Encode an integer in a top encoded format
+
+    :param value: integer to encode
+    :type value: int
+    :param type_bytes_length: bytes length of the wanted result
+    :type type_bytes_length: int
+    :param signed: if the data should be encoded as a signed integer
+    :type signed: bool
+    :return: encoded value
+    :rtype: bytes
+    """
+    if not signed and value < 0:
+        raise ValueError("Can not encode a negative number as an unsigned integer")
+    if signed:
+        byte_length = (value.bit_length() + 8) // 8
+    else:
+        byte_length = INTEGER_MAX_NUM_BYTES
+
+    return (
+        int(value)
+        .to_bytes(byte_length, byteorder="big", signed=signed)
+        .lstrip(bytes([0]))
+    )
+
+
 def nested_decode_basic(
     type_name: str, data: bytes
 ) -> Tuple[Union[int, str, bool, Address], bytes]:
@@ -93,7 +139,7 @@ def nested_decode_basic(
             raise ValueError(f"Expected a boolean but found the value {value}")
         return bool(value), data
 
-    integer_pattern = re.match(r"^([ui])(\d+)$", type_name.replace("size", "8"))
+    integer_pattern = re.match(r"^([ui])(\d+)$", type_name.replace("size", "32"))
     if integer_pattern is not None:
         groups = integer_pattern.groups()
         signed = groups[0] == "i"
@@ -152,5 +198,97 @@ def top_decode_basic(type_name: str, data: bytes) -> Union[int, str, bool, Addre
 
     if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
         return data.decode("utf-8")
+
+    raise ValueError(f"Unkown basic type {type_name}")
+
+
+def nested_encode_basic(type_name: str, value: Union[int, str, bool, Address]) -> bytes:
+    """
+    Encode a basic data under its nested encoded format
+
+    :param type_name: name of the target encoded type for the value
+    :type type_name: str
+    :param value: value to encode
+    :type value: Union[int, str, bool, Address]
+    :return: encoded value
+    :rtype: bytes
+    """
+    if type_name == "bool":
+        int_value = int(value)
+        if int_value not in (0, 1):
+            raise ValueError(f"Expected a boolean but found the value {value}")
+        return nested_encode_basic("u8", int_value)
+
+    integer_pattern = re.match(r"^([ui])(\d+)$", type_name.replace("size", "32"))
+    if integer_pattern is not None:
+        groups = integer_pattern.groups()
+        signed = groups[0] == "i"
+        type_number = int(groups[1])
+        if type_number % 8 != 0:
+            raise ValueError(f"Invalid integer type: {type_number}")
+        type_bytes_length = type_number // 8
+        return nested_encode_integer(value, type_bytes_length, signed)
+
+    if type_name == "BigUint":
+        encoded_value = top_encode_integer(value, False)
+        encoded_size = nested_encode_basic("u32", len(encoded_value))
+        return encoded_size + encoded_value
+
+    if type_name == "BigInt":
+        encoded_value = top_encode_integer(value, True)
+        encoded_size = nested_encode_basic("u32", len(encoded_value))
+        return encoded_size + encoded_value
+
+    if type_name == "Address":
+        if isinstance(value, Address):
+            return bytes.fromhex(value.to_hex())
+        if isinstance(value, str):
+            return bytes.fromhex(Address.from_bech32(value).to_hex())
+        raise ValueError(
+            f"Address type expected an Adress or a bech32 strin but got {value}"
+        )
+
+    if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
+        encoded_value = str(value).encode("utf-8")
+        encoded_size = nested_encode_basic("u32", len(encoded_value))
+        return encoded_size + encoded_value
+
+    raise ValueError(f"Unkown basic type {type_name}")
+
+
+def top_encode_basic(type_name: str, value: Union[int, str, bool, Address]) -> bytes:
+    """
+    Encode a basic data under its top encoded format
+
+    :param type_name: name of the target encoded type for the value
+    :type type_name: str
+    :param value: value to encode
+    :type value: Union[int, str, bool, Address]
+    :return: encoded value
+    :rtype: bytes
+    """
+    if type_name == "bool":
+        int_value = int(value)
+        if int_value not in (0, 1):
+            raise ValueError(f"Expected a boolean but found the value {value}")
+        return top_encode_basic("u8", int_value)
+
+    if type_name in ("usize", "u8", "u16", "u32", "u64", "BigUint"):
+        return top_encode_integer(value, False)
+
+    if type_name in ("isize", "i8", "i16", "i32", "i64", "BigInt"):
+        return top_encode_integer(value, True)
+
+    if type_name == "Address":
+        if isinstance(value, Address):
+            return bytes.fromhex(value.to_hex())
+        if isinstance(value, str):
+            return bytes.fromhex(Address.from_bech32(value).to_hex())
+        raise ValueError(
+            f"Address type expected an Adress or a bech32 strin but got {value}"
+        )
+
+    if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
+        return str(value).encode("utf-8")
 
     raise ValueError(f"Unkown basic type {type_name}")
