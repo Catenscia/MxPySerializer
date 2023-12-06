@@ -284,3 +284,28 @@ def test_top_encode(type_name: str, value: Any, expected_results: bytes):
 
     # Then
     assert expected_results == results
+
+
+@pytest.mark.parametrize(
+    "endpoint_name, values,expected_results",
+    [
+        (
+            "myEndpoint",
+            [15, True, "TFK-15987", "TRE-abcdef"],
+            [b"\x0F", b"\x01", b"TFK-15987", b"TRE-abcdef"],
+        ),
+        ("myEndpoint", [15, False], [b"\x0F", b""]),
+        ("myEndpoint2", [15], [b"\x0F"]),
+        ("myEndpoint2", [15, 16], [b"\x0F", b"\x10"]),
+    ],
+)
+def test_inputs_encode(endpoint_name: str, values: List, expected_results: List[bytes]):
+    # Given
+    file_path = Path("tests/data/mycontract.abi.json")
+    abi_serializer = AbiSerializer.from_abi(file_path)
+
+    # When
+    results = abi_serializer.encode_endpoint_inputs(endpoint_name, values)
+
+    # Then
+    assert expected_results == results

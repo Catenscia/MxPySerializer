@@ -5,6 +5,7 @@ This module contains the abi parser class which also have the methods to seriali
 and deserialize complex types
 """
 from __future__ import annotations
+from copy import deepcopy
 import json
 
 from pathlib import Path
@@ -561,18 +562,20 @@ class AbiSerializer:
 
         # for other cases, we can directly use the nested_decode function
         return self.nested_encode(type_name, value)
-        return encoded_value
 
     def decode_contract_query_response(
-        self, query_response: ContractQueryResponse, endpoint_name: str
+        self,
+        endpoint_name: str,
+        query_response: ContractQueryResponse,
     ) -> Any:
         """
         Decode the response of a contract query by relying on the ABI definition
 
-        :param query_response: response from the contract query
-        :type query_response: ContractQueryResponse
+
         :param endpoint_name: name of the endpoint that was called during the query
         :type endpoint_name: str
+        :param query_response: response from the contract query
+        :type query_response: ContractQueryResponse
         :return: decoded results
         :rtype: Any
         """
@@ -586,7 +589,7 @@ class AbiSerializer:
             is_multiresults = output.get("multi_result", False)
             if is_multiresults:
                 bytes_data, bytes_data_parts = bytes_data_parts, []
-            elif len(bytes_data_parts) == 0:  # optional value case
+            elif len(bytes_data_parts) == 0:  # option value case
                 bytes_data = b""
             else:
                 bytes_data = bytes_data_parts.pop(0)
@@ -598,3 +601,37 @@ class AbiSerializer:
         if len(bytes_data_parts) > 0:
             raise ValueError(f"Endpoint {endpoint_name} return more data than expected")
         return decoded_results
+
+    def encode_endpoint_inputs(self, endpoint_name: str, values: List) -> List[bytes]:
+        """
+        Encode given values into the expected types of an endpoint
+
+        :param endpoint_name: name of the endpoint
+        :type endpoint_name: str
+        :param values: values to encode
+        :type values: List
+        :return: values encoded as inputs
+        :rtype: List[bytes]
+        """
+        try:
+            endpoint = self.endpoints[endpoint_name]
+        except KeyError as err:
+            raise ValueError(f"Unknown endpoint {endpoint_name}") from err
+        values_copy = deepcopy(values)
+        encoded_inputs = []
+        for endpoint_input in endpoint.inputs:
+            is_multi_arg = endpoint_input.get("multi_arg", False)
+            if is_multi_arg:
+                to_encode, values_copy = values_copy, []
+            else:
+                try:
+                    to_encode = values_copy.pop(0)
+                except IndexError:
+                    to_encode = None
+            encoded_input = self.top_encode(endpoint_input["type"], to_encode)
+            if is_multi_arg:
+                encoded_inputs.extend(encoded_input)
+            else:
+                if encoded_input is not None:
+                    encoded_inputs.append(encoded_input)
+        return encoded_inputs

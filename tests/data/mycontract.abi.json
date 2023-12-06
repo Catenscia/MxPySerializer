@@ -34,6 +34,47 @@
             "outputs": []
         },
         {
+            "docs": [
+                "endpoint that has a variadic argument"
+            ],
+            "name": "myEndpoint",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "value",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "condition",
+                    "type": "bool"
+                },
+                {
+                    "name": "tokens",
+                    "type": "variadic<TokenIdentifier>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "endpoint that has an optional arg"
+            ],
+            "name": "myEndpoint2",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "value",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "optional_value",
+                    "type": "Optional<BigUint>"
+                }
+            ],
+            "outputs": []
+        },
+        {
             "name": "getPairs",
             "mutability": "readonly",
             "inputs": [],

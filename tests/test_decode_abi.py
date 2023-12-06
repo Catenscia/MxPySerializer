@@ -17,7 +17,13 @@ def test_abi_loading():
     abi_serializer = AbiSerializer.from_abi(file_path)
 
     # Then
-    assert list(abi_serializer.endpoints.keys()) == ["getSum", "add", "getPairs"]
+    assert list(abi_serializer.endpoints.keys()) == [
+        "getSum",
+        "add",
+        "myEndpoint",
+        "myEndpoint2",
+        "getPairs",
+    ]
     assert list(abi_serializer.structs.keys()) == [
         "MyAbiStruct",
         "MyAbiStruct2",
@@ -288,7 +294,7 @@ def test_decode_from_query_response():
     ]
 
     # When
-    results = abi_serializer.decode_contract_query_response(response, "getPairs")
+    results = abi_serializer.decode_contract_query_response("getPairs", response)
 
     # Then
     assert results[0] == 10
