@@ -79,7 +79,7 @@ class AbiSerializer:
             raw_content = json.load(file)
         return cls.from_dict(raw_content)
 
-    def nested_decode_iterable(
+    def decode_iterable(
         self, inner_types: List[str], data: bytes
     ) -> Tuple[List[Any], bytes]:
         """
