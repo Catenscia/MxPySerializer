@@ -149,7 +149,7 @@ def test_decode_struct(struct_name: str, data: bytes, expected_results: Dict):
         ),
         (
             "Option<BigUint>",
-            b"\x01\x00\x00\x00\x02\x00\x10\x02\x03\x04\x05\x1E\xA5",
+            b"\x01\x00\x00\x00\x01\x10\x02\x03\x04\x05\x1E\xA5",
             16,
             b"\x02\x03\x04\x05\x1E\xA5",
         ),
