@@ -69,7 +69,7 @@ def nested_decode_integer(
         )
 
     return (
-        int.from_bytes(data[:type_bytes_length], signed=signed),
+        int.from_bytes(data[:type_bytes_length], byteorder="big", signed=signed),
         data[type_bytes_length:],
     )
 
@@ -151,10 +151,10 @@ def nested_decode_basic(
 
     if type_name == "BigUint":
         element, data = get_bytes_element_from_size(data)
-        return int.from_bytes(element), data
+        return int.from_bytes(element, byteorder="big"), data
     if type_name == "BigInt":
         element, data = get_bytes_element_from_size(data)
-        return int.from_bytes(element, signed=True), data
+        return int.from_bytes(element, byteorder="big", signed=True), data
 
     if type_name == "Address":
         hex_address, data = data[:32].hex(), data[32:]
@@ -182,16 +182,16 @@ def top_decode_basic(type_name: str, data: bytes) -> Union[int, str, bool, Addre
     :rtype: Union[int, str, bool]
     """
     if type_name == "bool":
-        value = int.from_bytes(data)
+        value = int.from_bytes(data, byteorder="big")
         if value not in (0, 1):
             raise ValueError(f"Expected a boolean but found the value {value}")
         return bool(value)
 
     if type_name in ("usize", "u8", "u16", "u32", "u64", "BigUint"):
-        return int.from_bytes(data)
+        return int.from_bytes(data, byteorder="big")
 
     if type_name in ("isize", "i8", "i16", "i32", "i64", "BigInt"):
-        return int.from_bytes(data, signed=True)
+        return int.from_bytes(data, byteorder="big", signed=True)
 
     if type_name == "Address":
         return Address.from_hex(data.hex(), "erd").bech32()
