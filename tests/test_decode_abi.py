@@ -17,7 +17,14 @@ def test_abi_loading():
     abi_serializer = AbiSerializer.from_abi(file_path)
 
     # Then
-    assert list(abi_serializer.endpoints.keys()) == ["getSum", "add", "getPairs"]
+    assert list(abi_serializer.endpoints.keys()) == [
+        "getSum",
+        "add",
+        "myEndpoint",
+        "myEndpoint2",
+        "endpoint_5_bis",
+        "getPairs",
+    ]
     assert list(abi_serializer.structs.keys()) == [
         "MyAbiStruct",
         "MyAbiStruct2",
@@ -149,7 +156,7 @@ def test_decode_struct(struct_name: str, data: bytes, expected_results: Dict):
         ),
         (
             "Option<BigUint>",
-            b"\x01\x00\x00\x00\x02\x00\x10\x02\x03\x04\x05\x1E\xA5",
+            b"\x01\x00\x00\x00\x01\x10\x02\x03\x04\x05\x1E\xA5",
             16,
             b"\x02\x03\x04\x05\x1E\xA5",
         ),
@@ -272,51 +279,69 @@ def test_top_decode(
     assert expected_results == results
 
 
-def test_decode_from_query_response():
+@pytest.mark.parametrize(
+    "return_data,endpoint_name,expected_result",
+    [
+        (
+            [
+                "AAAACg==",
+                "AAAAeAEBY5L6MvMp/IWpWRnnjdLAMHLbORq20nPy6yGGe14/NtwAAAALTU1MRy05YTkwN2IAAAAMV0"
+                "VHTEQtYmQ0ZDc5AAAAEE1NTEdXRUdMRC04MzBkZjIAAAASAAAAC2s2F3MlLnj12ET3AAAACQED3roT"
+                "HjjYfQAAAAgeTdFH8A0BhQE=",
+                "AAAAeQIA7ZTU+9847vZKnJJ/1vFolYMeqSpPJgNwQT7GIeCKbwgAAAAOUEFEQVdBTi1hMTdmNTgAAA"
+                "AKVEdSLTY4ZGExZQAAABFQQURBV0FOVEdSLTM1Y2YwMgAAABIAAAAKEOV6kSUp6VwAAAAAAAsaDmJr"
+                "8jc9T4AAAAAAAAoQ5XqRJSnpXAAAAQ==",
+            ],
+            "getPairs",
+            [
+                10,
+                {
+                    "pair_id": 120,
+                    "state": {"name": "Active", "discriminant": 1, "values": None},
+                    "enabled": True,
+                    "owner": "erd1vwf05vhn987gt22er8ncm5kqxpedkwg6kmf88uhtyxr8kh3lxmwqr7me6y",
+                    "first_token_id": "MMLG-9a907b",
+                    "second_token_id": "WEGLD-bd4d79",
+                    "lp_token_id": "MMLGWEGLD-830df2",
+                    "lp_token_decimal": 18,
+                    "first_token_reserve": 129610503061042963410339063,
+                    "second_token_reserve": 18725608891927287933,
+                    "lp_token_supply": 2183631501244825989,
+                    "lp_token_roles_are_set": True,
+                },
+                {
+                    "pair_id": 121,
+                    "state": {
+                        "name": "ActiveButNoSwap",
+                        "discriminant": 2,
+                        "values": None,
+                    },
+                    "enabled": False,
+                    "owner": "erd1ak2df77l8rh0vj5ujfladutgjkp3a2f2funqxuzp8mrzrcy2duyqxtgx9m",
+                    "first_token_id": "PADAWAN-a17f58",
+                    "second_token_id": "TGR-68da1e",
+                    "lp_token_id": "PADAWANTGR-35cf02",
+                    "lp_token_decimal": 18,
+                    "first_token_reserve": 79791000000000000000000,
+                    "second_token_reserve": 31500000000000000000000000,
+                    "lp_token_supply": 79791000000000000000000,
+                    "lp_token_roles_are_set": True,
+                },
+            ],
+        )
+    ],
+)
+def test_decode_from_query_response(
+    return_data: List[str], endpoint_name: str, expected_result: List
+):
     # Given
     file_path = Path("tests/data/mycontract.abi.json")
     abi_serializer = AbiSerializer.from_abi(file_path)
     response = ContractQueryResponse()
-    response.return_data = [
-        "AAAACg==",
-        "AAAAeAEBY5L6MvMp/IWpWRnnjdLAMHLbORq20nPy6yGGe14/NtwAAAALTU1MRy05YTkwN2IAAAAMV0"
-        "VHTEQtYmQ0ZDc5AAAAEE1NTEdXRUdMRC04MzBkZjIAAAASAAAAC2s2F3MlLnj12ET3AAAACQED3roT"
-        "HjjYfQAAAAgeTdFH8A0BhQE=",
-        "AAAAeQIA7ZTU+9847vZKnJJ/1vFolYMeqSpPJgNwQT7GIeCKbwgAAAAOUEFEQVdBTi1hMTdmNTgAAA"
-        "AKVEdSLTY4ZGExZQAAABFQQURBV0FOVEdSLTM1Y2YwMgAAABIAAAAKEOV6kSUp6VwAAAAAAAsaDmJr"
-        "8jc9T4AAAAAAAAoQ5XqRJSnpXAAAAQ==",
-    ]
+    response.return_data = return_data
 
     # When
-    results = abi_serializer.decode_contract_query_response(response, "getPairs")
+    results = abi_serializer.decode_contract_query_response(endpoint_name, response)
 
     # Then
-    assert results[0] == 10
-    assert results[1] == {
-        "pair_id": 120,
-        "state": {"name": "Active", "discriminant": 1, "values": None},
-        "enabled": True,
-        "owner": "erd1vwf05vhn987gt22er8ncm5kqxpedkwg6kmf88uhtyxr8kh3lxmwqr7me6y",
-        "first_token_id": "MMLG-9a907b",
-        "second_token_id": "WEGLD-bd4d79",
-        "lp_token_id": "MMLGWEGLD-830df2",
-        "lp_token_decimal": 18,
-        "first_token_reserve": 129610503061042963410339063,
-        "second_token_reserve": 18725608891927287933,
-        "lp_token_supply": 2183631501244825989,
-        "lp_token_roles_are_set": True,
-    }
-    assert results[2] == {
-        "pair_id": 121,
-        "state": {"name": "ActiveButNoSwap", "discriminant": 2, "values": None},
-        "enabled": False,
-        "owner": "erd1ak2df77l8rh0vj5ujfladutgjkp3a2f2funqxuzp8mrzrcy2duyqxtgx9m",
-        "first_token_id": "PADAWAN-a17f58",
-        "second_token_id": "TGR-68da1e",
-        "lp_token_id": "PADAWANTGR-35cf02",
-        "lp_token_decimal": 18,
-        "first_token_reserve": 79791000000000000000000,
-        "second_token_reserve": 31500000000000000000000000,
-        "lp_token_supply": 79791000000000000000000,
-        "lp_token_roles_are_set": True,
-    }
+    assert expected_result == results

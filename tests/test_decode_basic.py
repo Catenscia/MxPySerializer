@@ -76,6 +76,7 @@ def test_nested_decode_integer_data_too_small():
             b"\x00\x00\x00\x04EGLD\x01\x0a\xaa\xaa",
             ("EGLD", b"\x01\x0a\xaa\xaa"),
         ),
+        ("bytes", b"\x00\x00\x00\x01\xAA\xEE", (b"\xAA", b"\xEE")),
     ],
 )
 def test_nested_decode_basic(
@@ -190,6 +191,7 @@ def test_wrong_bool_nested_decode():
             b"EGLD",
             "EGLD",
         ),
+        ("bytes", b"\xAA\xEE", b"\xAA\xEE"),
     ],
 )
 def test_top_decode_basic(
