@@ -103,7 +103,7 @@ def test_nested_decode_address():
     result, remaining_data = basic_type.nested_decode_basic("Address", data)
 
     # Then
-    assert expected_bech32_address == result.bech32()
+    assert expected_bech32_address == result
     assert expected_remaining_data == remaining_data
 
 
@@ -240,4 +240,4 @@ def test_top_decode_address():
     result = basic_type.top_decode_basic("Address", data)
 
     # Then
-    assert expected_bech32_address == result.bech32()
+    assert expected_bech32_address == result
