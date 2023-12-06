@@ -22,6 +22,7 @@ def test_abi_loading():
         "add",
         "myEndpoint",
         "myEndpoint2",
+        "endpoint_5_bis",
         "getPairs",
     ]
     assert list(abi_serializer.structs.keys()) == [

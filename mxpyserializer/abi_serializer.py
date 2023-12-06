@@ -475,13 +475,22 @@ class AbiSerializer:
                 return [self.top_decode(inner_type, sd) for sd in data]
 
             # at this point, the data should not be a list of bytes
-            if len(data) == 1:
+            if len(data) == 0:
+                data = None
+            elif len(data) == 1:
                 data = data[0]
             else:
                 raise ValueError(f"Data should not be a list for type {type_name}")
 
         if type_name in basic_type.BASIC_TYPES:
             return basic_type.top_decode_basic(type_name, data)
+
+        optional_pattern = re.match(r"^optional<(.*)>$", type_name)
+        if optional_pattern is not None:
+            if data is None:
+                return None
+            inner_type_name = optional_pattern.groups()[0]
+            return self.top_decode(inner_type_name, data)
 
         list_pattern = re.match(r"^List<(.*)>$", type_name)
         if list_pattern is not None:
@@ -544,10 +553,14 @@ class AbiSerializer:
             inner_type_name = list_pattern.groups()[0]
             return self.top_encode_iterable(len(value) * [inner_type_name], value)
 
-        optional_pattern = re.match(r"^Optional<(.*)>$", type_name)
+        optional_pattern = re.match(r"^optional<(.*)>$", type_name)
         if optional_pattern is not None:
             if value is None:
                 return None
+            if isinstance(value, (list, tuple)):
+                if len(value) == 0:
+                    return None
+                value = value[0]
             inner_type_name = optional_pattern.groups()[0]
             return self.top_encode(inner_type_name, value)
 
@@ -593,11 +606,14 @@ class AbiSerializer:
                 bytes_data = b""
             else:
                 bytes_data = bytes_data_parts.pop(0)
-            decoded_output = self.top_decode(output["type"], bytes_data)
-            if is_multiresults:
-                decoded_results.extend(decoded_output)
+            output_type = output["type"]
+            decoded_output = self.top_decode(output_type, bytes_data)
+            if is_multiresults and not output_type.startswith("optional"):
+                if decoded_output is not None:
+                    decoded_results.extend(decoded_output)
             else:
-                decoded_results.append(decoded_output)
+                if decoded_output is not None or not output_type.startswith("optional"):
+                    decoded_results.append(decoded_output)
         if len(bytes_data_parts) > 0:
             raise ValueError(f"Endpoint {endpoint_name} return more data than expected")
         return decoded_results
@@ -628,10 +644,14 @@ class AbiSerializer:
                     to_encode = values_copy.pop(0)
                 except IndexError:
                     to_encode = None
-            encoded_input = self.top_encode(endpoint_input["type"], to_encode)
-            if is_multi_arg:
-                encoded_inputs.extend(encoded_input)
-            else:
+            to_encode_type = endpoint_input["type"]
+            encoded_input = self.top_encode(to_encode_type, to_encode)
+            if is_multi_arg and not to_encode_type.startswith("optional"):
                 if encoded_input is not None:
+                    encoded_inputs.extend(encoded_input)
+            else:
+                if encoded_input is not None or not to_encode_type.startswith(
+                    "optional"
+                ):
                     encoded_inputs.append(encoded_input)
         return encoded_inputs

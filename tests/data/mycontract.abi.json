@@ -69,10 +69,34 @@
                 },
                 {
                     "name": "optional_value",
-                    "type": "Optional<BigUint>"
+                    "type": "optional<BigUint>"
                 }
             ],
             "outputs": []
+        },
+        {
+            "name": "endpoint_5_bis",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "a",
+                    "type": "Option<TokenIdentifier>"
+                },
+                {
+                    "name": "b",
+                    "type": "optional<u64>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "Option<TokenIdentifier>"
+                },
+                {
+                    "type": "optional<u64>",
+                    "multi_result": true
+                }
+            ]
         },
         {
             "name": "getPairs",
