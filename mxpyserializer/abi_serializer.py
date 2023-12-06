@@ -496,7 +496,7 @@ class AbiSerializer:
             raise ValueError(f"Some left over bytes were not decoded: {data}")
         return result
 
-    def top_encode(self, type_name: str, value: Any) -> Union[bytes, List[bytes]]:
+    def top_encode(self, type_name: str, value: Any) -> Union[bytes, List[bytes], None]:
         """
         Encode the input data assuming a top-encoded format
 
@@ -504,8 +504,8 @@ class AbiSerializer:
         :type type_name: str
         :param value: value to encode
         :type value: Any
-        :return: encoded value
-        :rtype: Union[bytes, List[bytes]]
+        :return: encoded value (None if no encoding, for optional value for example)
+        :rtype: Union[bytes, List[bytes], None]
         """
         variadic_multi_pattern = re.match(r"^variadic<multi<(.*)>>$", type_name)
         if variadic_multi_pattern is not None:
@@ -536,9 +536,6 @@ class AbiSerializer:
                 encoded_value.append(self.top_encode(inner_type, inner_value))
             return encoded_value
 
-        if type_name in basic_type.BASIC_TYPES:
-            return basic_type.top_encode_basic(type_name, value)
-
         list_pattern = re.match(r"^List<(.*)>$", type_name)
         if list_pattern is not None:
             if not isinstance(value, Iterable):
@@ -546,14 +543,24 @@ class AbiSerializer:
             inner_type_name = list_pattern.groups()[0]
             return self.top_encode_iterable(len(value) * [inner_type_name], value)
 
-        if type_name.startswith("Option") and value is None:
+        optional_pattern = re.match(r"^Optional<(.*)>$", type_name)
+        if optional_pattern is not None:
+            if value is None:
+                return None
+            inner_type_name = optional_pattern.groups()[0]
+            return self.top_encode(inner_type_name, value)
+
+        if type_name.startswith("Option<") and value is None:
             return bytes()
 
         if type_name in self.enums:
             return self.encode_custom_enum(type_name, value, True)
 
+        if type_name in basic_type.BASIC_TYPES:
+            return basic_type.top_encode_basic(type_name, value)
+
         # for other cases, we can directly use the nested_decode function
-        encoded_value = self.nested_encode(type_name, value)
+        return self.nested_encode(type_name, value)
         return encoded_value
 
     def decode_contract_query_response(
