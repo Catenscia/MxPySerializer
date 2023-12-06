@@ -1,5 +1,6 @@
 """
 author: Etienne Wallet
 
-This package is used to serialize and deserialize MultiversX data format by using ABI definitions.
+This package is used to serialize and deserialize MultiversX data format
+by using ABI definitions.
 """
