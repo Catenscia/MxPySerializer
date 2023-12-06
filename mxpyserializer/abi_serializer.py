@@ -99,6 +99,27 @@ class AbiSerializer:
             decoded_values.append(result)
         return decoded_values, data
 
+    def top_encode_iterable(self, inner_types: List[str], value: List[Any]) -> bytes:
+        """
+        Encode the input value as a concatenation of nested encoded elements.
+
+        :param inner_types: types of the concatenated elements to encode, in order.
+        :type inner_types: List[str]
+        :param value: list containing the values to encode
+        :type value: List[Any]
+        :return: encoded value
+        :rtype: bytes
+        """
+        encoded_value = bytes()
+        if len(value) != len(inner_types):
+            raise ValueError(
+                f"Number of values and associated types don't match: {len(value)} "
+                f"!= {len(inner_types)}"
+            )
+        for inner_type, inner_value in zip(inner_types, value):
+            encoded_value += self.nested_encode(inner_type, inner_value)
+        return encoded_value
+
     def top_decode_iterable(self, inner_type: str, data: bytes) -> List[Any]:
         """
         Decodes a part of the input data as a concatenation of top encoded elements.
@@ -161,12 +182,48 @@ class AbiSerializer:
 
         return self.nested_decode_fields(type_definition.fields, data)
 
+    def encode_custom_struct(self, type_name: str, data: Union[Dict, List]) -> bytes:
+        """
+        Encodes the input data assuming it is a custom struct defined in the
+        ABI. All childs elements of the structures are always nested encoded.
+
+        :param type_name: name of the type of the value to extract from the data
+        :type type_name: str
+        :param data: data to encode
+        :type data: Union[Dict, List]
+        :return: encoded struct
+        :rtype: bytes
+        """
+        try:
+            type_definition = self.structs[type_name]
+        except KeyError as err:
+            raise ValueError(
+                f"Struct {type_name} is not defined by the ABI file"
+            ) from err
+        if len(data) != len(type_definition.fields):
+            raise ValueError(
+                f"{type_name} expects {len(type_definition.fields)} "
+                f"fields but got {len(data)}"
+            )
+        if isinstance(data, List):
+            data = {field.name: d for field, d in zip(type_definition.fields, data)}
+        results = bytes()
+        for field in type_definition.fields:
+            try:
+                value = data[field.name]
+            except KeyError as err:
+                raise ValueError(
+                    f"Missing field {field.name} for struct {type_name}"
+                ) from err
+            results += self.nested_encode(field.type, value)
+        return results
+
     def decode_custom_enum(
         self, type_name: str, data: bytes
     ) -> Tuple[Dict[str, Any], bytes]:
         """
         Decodes a part of the input data assuming it is a custom enum defined in the
-        ABI. All childs elements of the structures are always nested encoded.
+        ABI. All childs elements of the enums are always nested encoded.
         Returns the left over.
 
         :param type_name: name of the type of the value to extract from the data
@@ -201,7 +258,7 @@ class AbiSerializer:
 
         if len(selected_variant.fields):
             inner_types = [f.type for f in selected_variant.fields]
-            inner_values, data = self.nested_decode_iterable(inner_types, data)
+            inner_values, data = self.decode_iterable(inner_types, data)
         else:
             inner_values = None
 
@@ -211,6 +268,70 @@ class AbiSerializer:
             "values": inner_values,
         }
         return decoded_enum, data
+
+    def encode_custom_enum(
+        self, type_name: str, value: Any, top_encode: bool = False
+    ) -> bytes:
+        """
+        Encode the input data assuming it is a custom enum defined in the
+        ABI. All childs elements of the enums are always nested encoded.
+
+        :param type_name: name of the type of the value to extract from the data
+        :type type_name: str
+        :param value: value to encode. Can be the discriminant, the name. If the enum
+            variant must contains inner values, then it should be passed as a Dict
+            containing the keys 'values' and one of 'discriminant' or 'name'
+        :type value: Any
+        :param top_encode: is the encoding should be a top or a nested encoding
+        :type top_encode: bool, default to False
+        :return: encoded enum
+        :rtype: bytes
+        """
+        try:
+            abi_enum = self.enums[type_name]
+        except KeyError as err:
+            raise ValueError(
+                f"Struct {type_name} is not defined by the ABI file"
+            ) from err
+        if isinstance(value, int):  # assuming discriminant
+            discriminant, name, inner_values = value, None, None
+        elif isinstance(value, str):  # assuming name
+            discriminant, name, inner_values = None, value, None
+        elif isinstance(value, Dict):  # assuming full definition
+            discriminant = value.get("discriminant", None)
+            name = value.get("name", None)
+            inner_values = value.get("values", None)
+        else:
+            raise TypeError("value should be an int, a str or a dict")
+
+        selected_variant = None
+        for variant in abi_enum.variants:
+            if variant.discriminant == discriminant or variant.name == name:
+                selected_variant = variant
+                break
+
+        if selected_variant is None:
+            raise ValueError(
+                f"No variant found for name = {name} and discriminant = {discriminant}"
+            )
+
+        if top_encode and selected_variant.discriminant == 0 and inner_values is None:
+            return bytes()
+
+        encoded_discriminant = basic_type.nested_encode_basic(
+            "i8", selected_variant.discriminant
+        )
+        if len(selected_variant.fields):
+            if not isinstance(inner_values, list):
+                raise ValueError(
+                    "Expected a list of inner values for variant "
+                    f"{selected_variant.discriminant} of the enum {type_name}"
+                )
+            inner_types = [f.type for f in selected_variant.fields]
+            encoded_inner_values = self.top_encode_iterable(inner_types, inner_values)
+        else:
+            encoded_inner_values = bytes()
+        return encoded_discriminant + encoded_inner_values
 
     def nested_decode(self, type_name: str, data: bytes) -> Tuple[Any, bytes]:
         """
@@ -231,18 +352,18 @@ class AbiSerializer:
         if list_pattern is not None:
             inner_type_name = list_pattern.groups()[0]
             list_size, data = basic_type.nested_decode_basic("u32", data)
-            return self.nested_decode_iterable(list_size * [inner_type_name], data)
+            return self.decode_iterable(list_size * [inner_type_name], data)
 
         array_pattern = re.match(r"^array(\d+)<(.*)>$", type_name)
         if array_pattern is not None:
             array_size = int(array_pattern.groups()[0])
             inner_type_name = array_pattern.groups()[1]
-            return self.nested_decode_iterable(array_size * [inner_type_name], data)
+            return self.decode_iterable(array_size * [inner_type_name], data)
 
         tuple_pattern = re.match(r"^tuple<(.*)>$", type_name)
         if tuple_pattern is not None:
             inner_types = tuple_pattern.groups()[0].replace(" ", "").split(",")
-            return self.nested_decode_iterable(inner_types, data)
+            return self.decode_iterable(inner_types, data)
 
         option_pattern = re.match(r"^Option<(.*)>$", type_name)
         if option_pattern is not None:
@@ -257,6 +378,56 @@ class AbiSerializer:
 
         if type_name in self.enums:
             return self.decode_custom_enum(type_name, data)
+
+        raise ValueError(f"Unkown type {type_name}")
+
+    def nested_encode(self, type_name: str, value: Any) -> bytes:
+        """
+        Encode the input value assuming a nested-encoded format.
+
+        :param type_name: name of the type of the value to encode into
+        :type type_name: str
+        :param value: value to encode
+        :type value: Any
+        :return: encoded value
+        :rtype: bytes
+        """
+        if type_name in basic_type.BASIC_TYPES:
+            return basic_type.nested_encode_basic(type_name, value)
+
+        list_pattern = re.match(r"^List<(.*)>$", type_name)
+        if list_pattern is not None:
+            inner_type_name = list_pattern.groups()[0]
+            list_size = len(value)
+            encoded_list_size = basic_type.nested_encode_basic("u32", list_size)
+            encoded_value = self.top_encode_iterable(
+                list_size * [inner_type_name], value
+            )
+            return encoded_list_size + encoded_value
+
+        array_pattern = re.match(r"^array(\d+)<(.*)>$", type_name)
+        if array_pattern is not None:
+            array_size = int(array_pattern.groups()[0])
+            inner_type_name = array_pattern.groups()[1]
+            return self.top_encode_iterable(array_size * [inner_type_name], value)
+
+        tuple_pattern = re.match(r"^tuple<(.*)>$", type_name)
+        if tuple_pattern is not None:
+            inner_types = tuple_pattern.groups()[0].replace(" ", "").split(",")
+            return self.top_encode_iterable(inner_types, value)
+
+        option_pattern = re.match(r"^Option<(.*)>$", type_name)
+        if option_pattern is not None:
+            if value is None:
+                return basic_type.nested_encode_basic("bool", False)
+            option_encoding = basic_type.nested_encode_basic("bool", True)
+            inner_type_name = option_pattern.groups()[0]
+            return option_encoding + self.nested_encode(inner_type_name, value)
+
+        if type_name in self.structs:
+            return self.encode_custom_struct(type_name, value)
+        if type_name in self.enums:
+            return self.encode_custom_enum(type_name, value)
 
         raise ValueError(f"Unkown type {type_name}")
 
