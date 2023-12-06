@@ -9,7 +9,7 @@ import json
 
 from pathlib import Path
 import re
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union, Iterable
 
 from multiversx_sdk_network_providers.contract_query_response import (
     ContractQueryResponse,
@@ -397,6 +397,8 @@ class AbiSerializer:
 
         list_pattern = re.match(r"^List<(.*)>$", type_name)
         if list_pattern is not None:
+            if not isinstance(value, Iterable):
+                raise TypeError("Value to encode must be an iterable for List type")
             inner_type_name = list_pattern.groups()[0]
             list_size = len(value)
             encoded_list_size = basic_type.nested_encode_basic("u32", list_size)
@@ -407,12 +409,16 @@ class AbiSerializer:
 
         array_pattern = re.match(r"^array(\d+)<(.*)>$", type_name)
         if array_pattern is not None:
+            if not isinstance(value, Iterable):
+                raise TypeError("Value to encode must be an iterable for array type")
             array_size = int(array_pattern.groups()[0])
             inner_type_name = array_pattern.groups()[1]
             return self.top_encode_iterable(array_size * [inner_type_name], value)
 
         tuple_pattern = re.match(r"^tuple<(.*)>$", type_name)
         if tuple_pattern is not None:
+            if not isinstance(value, Iterable):
+                raise TypeError("Value to encode must be an iterable for tuple type")
             inner_types = tuple_pattern.groups()[0].replace(" ", "").split(",")
             return self.top_encode_iterable(inner_types, value)
 
@@ -489,6 +495,66 @@ class AbiSerializer:
         if len(data) != 0:
             raise ValueError(f"Some left over bytes were not decoded: {data}")
         return result
+
+    def top_encode(self, type_name: str, value: Any) -> Union[bytes, List[bytes]]:
+        """
+        Encode the input data assuming a top-encoded format
+
+        :param type_name: name of the type of the value to encode into
+        :type type_name: str
+        :param value: value to encode
+        :type value: Any
+        :return: encoded value
+        :rtype: Union[bytes, List[bytes]]
+        """
+        variadic_multi_pattern = re.match(r"^variadic<multi<(.*)>>$", type_name)
+        if variadic_multi_pattern is not None:
+            if not isinstance(value, Iterable):
+                raise TypeError("Value to encode must be an iterable for variadic type")
+            inner_types = variadic_multi_pattern.groups()[0].replace(" ", "").split(",")
+            encoded_value = []
+            for multi in value:
+                if not isinstance(multi, Iterable):
+                    raise TypeError(
+                        "Value to encode must be an iterable for multi type"
+                    )
+                if len(multi) != len(inner_types):
+                    raise ValueError(
+                        f"Expected {len(inner_types)} elements but got {multi}"
+                    )
+                for inner_value, inner_type in zip(multi, inner_types):
+                    encoded_value.append(self.top_encode(inner_type, inner_value))
+            return encoded_value
+
+        variadic_pattern = re.match(r"^variadic<(.*)>$", type_name)
+        if variadic_pattern is not None:
+            if not isinstance(value, Iterable):
+                raise TypeError("Value to encode must be an iterable for variadic type")
+            inner_type = variadic_pattern.groups()[0]
+            encoded_value = []
+            for inner_value in value:
+                encoded_value.append(self.top_encode(inner_type, inner_value))
+            return encoded_value
+
+        if type_name in basic_type.BASIC_TYPES:
+            return basic_type.top_encode_basic(type_name, value)
+
+        list_pattern = re.match(r"^List<(.*)>$", type_name)
+        if list_pattern is not None:
+            if not isinstance(value, Iterable):
+                raise TypeError("Value to encode must be an iterable for List type")
+            inner_type_name = list_pattern.groups()[0]
+            return self.top_encode_iterable(len(value) * [inner_type_name], value)
+
+        if type_name.startswith("Option") and value is None:
+            return bytes()
+
+        if type_name in self.enums:
+            return self.encode_custom_enum(type_name, value, True)
+
+        # for other cases, we can directly use the nested_decode function
+        encoded_value = self.nested_encode(type_name, value)
+        return encoded_value
 
     def decode_contract_query_response(
         self, query_response: ContractQueryResponse, endpoint_name: str
