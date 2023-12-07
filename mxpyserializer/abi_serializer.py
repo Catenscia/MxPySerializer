@@ -487,7 +487,7 @@ class AbiSerializer:
 
         optional_pattern = re.match(r"^optional<(.*)>$", type_name)
         if optional_pattern is not None:
-            if data is None:
+            if data is None or len(data) == 0:
                 return None
             inner_type_name = optional_pattern.groups()[0]
             return self.top_decode(inner_type_name, data)
@@ -599,20 +599,22 @@ class AbiSerializer:
         bytes_data_parts = query_response.get_return_data_parts()
         decoded_results = []
         for output in endpoint.outputs:
-            is_multiresults = output.get("multi_result", False)
+            output_type = output["type"]
+            is_multiresults = output.get(
+                "multi_result", False
+            ) and not output_type.startswith("optional")
             if is_multiresults:
                 bytes_data, bytes_data_parts = bytes_data_parts, []
             elif len(bytes_data_parts) == 0:  # option value case
                 bytes_data = b""
             else:
                 bytes_data = bytes_data_parts.pop(0)
-            output_type = output["type"]
             decoded_output = self.top_decode(output_type, bytes_data)
-            if is_multiresults and not output_type.startswith("optional"):
+            if is_multiresults:
                 if decoded_output is not None:
                     decoded_results.extend(decoded_output)
             else:
-                if decoded_output is not None or not output_type.startswith("optional"):
+                if not output_type.startswith("optional") or decoded_output is not None:
                     decoded_results.append(decoded_output)
         if len(bytes_data_parts) > 0:
             raise ValueError(f"Endpoint {endpoint_name} return more data than expected")
@@ -636,7 +638,10 @@ class AbiSerializer:
         values_copy = deepcopy(values)
         encoded_inputs = []
         for endpoint_input in endpoint.inputs:
-            is_multi_arg = endpoint_input.get("multi_arg", False)
+            to_encode_type = endpoint_input["type"]
+            is_multi_arg = endpoint_input.get(
+                "multi_arg", False
+            ) and not to_encode_type.startswith("optional")
             if is_multi_arg:
                 to_encode, values_copy = values_copy, []
             else:
@@ -644,14 +649,14 @@ class AbiSerializer:
                     to_encode = values_copy.pop(0)
                 except IndexError:
                     to_encode = None
-            to_encode_type = endpoint_input["type"]
             encoded_input = self.top_encode(to_encode_type, to_encode)
-            if is_multi_arg and not to_encode_type.startswith("optional"):
+            if is_multi_arg:
                 if encoded_input is not None:
                     encoded_inputs.extend(encoded_input)
             else:
-                if encoded_input is not None or not to_encode_type.startswith(
-                    "optional"
+                if (
+                    not to_encode_type.startswith("optional")
+                    or encoded_input is not None
                 ):
                     encoded_inputs.append(encoded_input)
         return encoded_inputs

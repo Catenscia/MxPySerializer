@@ -75,7 +75,7 @@
             "outputs": []
         },
         {
-            "name": "endpoint_5_bis",
+            "name": "endpoint_5",
             "mutability": "readonly",
             "inputs": [
                 {
