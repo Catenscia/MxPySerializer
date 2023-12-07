@@ -592,6 +592,11 @@ class AbiSerializer:
         :return: decoded results
         :rtype: Any
         """
+        if query_response.return_code != "ok":
+            raise ValueError(
+                f"Query failed: {query_response.return_code}, "
+                f"{query_response.return_message}"
+            )
         try:
             endpoint = self.endpoints[endpoint_name]
         except KeyError as err:
