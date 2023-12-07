@@ -1,0 +1,270 @@
+{
+    "buildInfo": {},
+    "docs": [
+        "custom ABI that does not correspond to a real contrat"
+    ],
+    "name": "MyContract",
+    "constructor": {
+        "inputs": [],
+        "outputs": []
+    },
+    "endpoints": [
+        {
+            "name": "getSum",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "BigUint"
+                }
+            ]
+        },
+        {
+            "docs": [
+                "Add desired amount to the storage variable."
+            ],
+            "name": "add",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "value",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "endpoint that has a variadic argument"
+            ],
+            "name": "myEndpoint",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "value",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "condition",
+                    "type": "bool"
+                },
+                {
+                    "name": "tokens",
+                    "type": "variadic<TokenIdentifier>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "docs": [
+                "endpoint that has an optional arg"
+            ],
+            "name": "myEndpoint2",
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "value",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "optional_value",
+                    "type": "optional<BigUint>"
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "endpoint_5",
+            "mutability": "readonly",
+            "inputs": [
+                {
+                    "name": "a",
+                    "type": "Option<TokenIdentifier>"
+                },
+                {
+                    "name": "b",
+                    "type": "optional<u64>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": [
+                {
+                    "type": "Option<TokenIdentifier>"
+                },
+                {
+                    "type": "optional<u64>",
+                    "multi_result": true
+                }
+            ]
+        },
+        {
+            "name": "getPairs",
+            "mutability": "readonly",
+            "inputs": [],
+            "outputs": [
+                {
+                    "type": "u32"
+                },
+                {
+                    "type": "variadic<Pair>",
+                    "multi_result": true
+                }
+            ]
+        }
+    ],
+    "events": [],
+    "esdtAttributes": [],
+    "hasCallback": false,
+    "types": {
+        "MyAbiStruct": {
+            "type": "struct",
+            "docs": [
+                "ABI example of a struct."
+            ],
+            "fields": [
+                {
+                    "docs": [
+                        "Fields can also have docs."
+                    ],
+                    "name": "field1",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "field2",
+                    "type": "List<Option<u32>>"
+                },
+                {
+                    "name": "field3",
+                    "type": "tuple<bool, i32>"
+                }
+            ]
+        },
+        "MyAbiStruct2": {
+            "type": "struct",
+            "docs": [
+                "ABI example of a struct."
+            ],
+            "fields": [
+                {
+                    "name": "field1",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "field2",
+                    "type": "List<u32>"
+                },
+                {
+                    "name": "field3",
+                    "type": "tuple<bool, TokenIdentifier>"
+                }
+            ]
+        },
+        "Pair": {
+            "type": "struct",
+            "fields": [
+                {
+                    "name": "pair_id",
+                    "type": "u32"
+                },
+                {
+                    "name": "state",
+                    "type": "State"
+                },
+                {
+                    "name": "enabled",
+                    "type": "bool"
+                },
+                {
+                    "name": "owner",
+                    "type": "Address"
+                },
+                {
+                    "name": "first_token_id",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "second_token_id",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "lp_token_id",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "lp_token_decimal",
+                    "type": "u32"
+                },
+                {
+                    "name": "first_token_reserve",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "second_token_reserve",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "lp_token_supply",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "lp_token_roles_are_set",
+                    "type": "bool"
+                }
+            ]
+        },
+        "State": {
+            "type": "enum",
+            "variants": [
+                {
+                    "name": "Inactive",
+                    "discriminant": 0
+                },
+                {
+                    "name": "Active",
+                    "discriminant": 1
+                },
+                {
+                    "name": "ActiveButNoSwap",
+                    "discriminant": 2
+                }
+            ]
+        },
+        "MyAbiEnum": {
+            "type": "enum",
+            "docs": [
+                "ABI example of an enum."
+            ],
+            "variants": [
+                {
+                    "name": "Nothing",
+                    "discriminant": 0
+                },
+                {
+                    "name": "Something",
+                    "discriminant": 1,
+                    "fields": [
+                        {
+                            "name": "0",
+                            "type": "i32"
+                        }
+                    ]
+                },
+                {
+                    "name": "SomethingMore",
+                    "discriminant": 2,
+                    "fields": [
+                        {
+                            "name": "0",
+                            "type": "u8"
+                        },
+                        {
+                            "name": "1",
+                            "type": "MyAbiStruct2"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
+}
