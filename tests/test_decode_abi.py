@@ -22,7 +22,7 @@ def test_abi_loading():
         "add",
         "myEndpoint",
         "myEndpoint2",
-        "endpoint_5_bis",
+        "endpoint_5",
         "getPairs",
     ]
     assert list(abi_serializer.structs.keys()) == [
@@ -285,12 +285,12 @@ def test_top_decode(
         (
             [
                 "AAAACg==",
-                "AAAAeAEBY5L6MvMp/IWpWRnnjdLAMHLbORq20nPy6yGGe14/NtwAAAALTU1MRy05YTkwN2IAAAAMV0"
-                "VHTEQtYmQ0ZDc5AAAAEE1NTEdXRUdMRC04MzBkZjIAAAASAAAAC2s2F3MlLnj12ET3AAAACQED3roT"
-                "HjjYfQAAAAgeTdFH8A0BhQE=",
-                "AAAAeQIA7ZTU+9847vZKnJJ/1vFolYMeqSpPJgNwQT7GIeCKbwgAAAAOUEFEQVdBTi1hMTdmNTgAAA"
-                "AKVEdSLTY4ZGExZQAAABFQQURBV0FOVEdSLTM1Y2YwMgAAABIAAAAKEOV6kSUp6VwAAAAAAAsaDmJr"
-                "8jc9T4AAAAAAAAoQ5XqRJSnpXAAAAQ==",
+                "AAAAeAEBY5L6MvMp/IWpWRnnjdLAMHLbORq20nPy6yGGe14/NtwAAAALTU1MRy05YTkwN2"
+                "IAAAAMV0VHTEQtYmQ0ZDc5AAAAEE1NTEdXRUdMRC04MzBkZjIAAAASAAAAC2s2F3MlLnj1"
+                "2ET3AAAACQED3roTHjjYfQAAAAgeTdFH8A0BhQE=",
+                "AAAAeQIA7ZTU+9847vZKnJJ/1vFolYMeqSpPJgNwQT7GIeCKbwgAAAAOUEFEQVdBTi1hMT"
+                "dmNTgAAAAKVEdSLTY4ZGExZQAAABFQQURBV0FOVEdSLTM1Y2YwMgAAABIAAAAKEOV6kSUp"
+                "6VwAAAAAAAsaDmJr8jc9T4AAAAAAAAoQ5XqRJSnpXAAAAQ==",
             ],
             "getPairs",
             [
@@ -299,7 +299,10 @@ def test_top_decode(
                     "pair_id": 120,
                     "state": {"name": "Active", "discriminant": 1, "values": None},
                     "enabled": True,
-                    "owner": "erd1vwf05vhn987gt22er8ncm5kqxpedkwg6kmf88uhtyxr8kh3lxmwqr7me6y",
+                    "owner": (
+                        "erd1vwf05vhn987gt22er8ncm5kqxped"
+                        "kwg6kmf88uhtyxr8kh3lxmwqr7me6y"
+                    ),
                     "first_token_id": "MMLG-9a907b",
                     "second_token_id": "WEGLD-bd4d79",
                     "lp_token_id": "MMLGWEGLD-830df2",
@@ -317,7 +320,10 @@ def test_top_decode(
                         "values": None,
                     },
                     "enabled": False,
-                    "owner": "erd1ak2df77l8rh0vj5ujfladutgjkp3a2f2funqxuzp8mrzrcy2duyqxtgx9m",
+                    "owner": (
+                        "erd1ak2df77l8rh0vj5ujfladutgjkp3a2"
+                        "f2funqxuzp8mrzrcy2duyqxtgx9m"
+                    ),
                     "first_token_id": "PADAWAN-a17f58",
                     "second_token_id": "TGR-68da1e",
                     "lp_token_id": "PADAWANTGR-35cf02",
@@ -328,7 +334,8 @@ def test_top_decode(
                     "lp_token_roles_are_set": True,
                 },
             ],
-        )
+        ),
+        (["AQAAAAxXRUdMRC1hYmNkZWY="], "endpoint_5", ["WEGLD-abcdef"]),
     ],
 )
 def test_decode_from_query_response(

@@ -298,7 +298,7 @@ def test_top_encode(type_name: str, value: Any, expected_results: bytes):
         ("myEndpoint2", [15], [b"\x0F"]),
         ("myEndpoint2", [15, 16], [b"\x0F", b"\x10"]),
         (
-            "endpoint_5_bis",
+            "endpoint_5",
             ["WEGLD-abcdef", 789],
             [b"\x01\x00\x00\x00\x0cWEGLD-abcdef", b"\x03\x15"],
         ),
