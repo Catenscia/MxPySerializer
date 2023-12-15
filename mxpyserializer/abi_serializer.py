@@ -714,15 +714,15 @@ class AbiSerializer:
 
     def decode_endpoint_input_data(
         self, raw_input_data: str
-    ) -> Tuple[List[Dict], List[Any]]:
+    ) -> Tuple[str, List[Dict], List[Any]]:
         """
         Decode the input data of a transaction that calls an endpoint of
         the smart-contract
 
         :param b64_input_data: full input data (not b64 encoded)
         :type b64_input_data: str
-        :return: Esdt transfers, list of decoded inputs
-        :rtype: Tuple[List[Dict], List[Any]]
+        :return: endpoint name, Esdt transfers, list of decoded inputs
+        :rtype: Tuple[str, List[Dict], List[Any]]
         """
         data_parts = raw_input_data.split("@")
         transfers = []
@@ -779,4 +779,4 @@ class AbiSerializer:
         decoded_inputs = self.decode_io(
             endpoint.inputs, [bytes.fromhex(e) for e in data_parts]
         )
-        return transfers, decoded_inputs
+        return endpoint_name, transfers, decoded_inputs

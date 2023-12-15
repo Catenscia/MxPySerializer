@@ -372,6 +372,7 @@ def test_decode_from_query_response(
             "JFNEVCQTRCMkVDQ0JDRjE3MDNCQkQ2QjJFMEQxMzUxNDMwRTc2OUY1NDgzQDFCQzE2RDY3NEV"
             "DODAwMDA=",
             (
+                "setConfig",
                 [],
                 [
                     "WEGLD-bd4d79",
@@ -395,6 +396,7 @@ def test_decode_from_query_response(
             "OWZhOGZmMDAwQDAxQDU4NGM0ODJkMzg2NDYxNjEzNTMwQDU3NDU0NzRjNDQyZDYyNjQzNDY0Mz"
             "czOQ==",
             (
+                "swapMultiTokensFixedInput",
                 [
                     {
                         "identifier": "XLH-8daa50",
@@ -411,6 +413,7 @@ def test_decode_from_query_response(
             "MDI4MjE1ZTQwNEA1NzQ1NDc0YzQ0MmQ2MjY0MzQ2NDM3MzlAQDE1ZjY5OTcxODIzNTMyQDYxNj"
             "Q2NDRjNjk3MTc1Njk2NDY5NzQ3OUAwMUAwMQ==",
             (
+                "addLiquidity",
                 [
                     {
                         "identifier": "ZOG-c66239",

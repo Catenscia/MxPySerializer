@@ -94,9 +94,12 @@ def example_decode_transaction_input_data():
     raw_input_data = tx.data
 
     # parse the data and display iy
-    transfers, decoded_input_args = abi_serializer.decode_endpoint_input_data(
-        raw_input_data
-    )
+    (
+        endpoint_name,
+        transfers,
+        decoded_input_args,
+    ) = abi_serializer.decode_endpoint_input_data(raw_input_data)
+    print(endpoint_name)
     print(json.dumps(transfers, indent=4))
     print(json.dumps(decoded_input_args, indent=4))
 
