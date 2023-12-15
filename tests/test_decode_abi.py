@@ -1,3 +1,4 @@
+import base64
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
@@ -18,12 +19,15 @@ def test_abi_loading():
 
     # Then
     assert list(abi_serializer.endpoints.keys()) == [
+        "setConfig",
         "getSum",
         "add",
         "myEndpoint",
         "myEndpoint2",
         "endpoint_5",
         "getPairs",
+        "swapMultiTokensFixedInput",
+        "addLiquidity",
     ]
     assert list(abi_serializer.structs.keys()) == [
         "MyAbiStruct",
@@ -346,9 +350,92 @@ def test_decode_from_query_response(
     abi_serializer = AbiSerializer.from_abi(file_path)
     response = ContractQueryResponse()
     response.return_data = return_data
+    response.return_code = "ok"
 
     # When
     results = abi_serializer.decode_contract_query_response(endpoint_name, response)
 
     # Then
     assert expected_result == results
+
+
+@pytest.mark.parametrize(
+    "b64_input_data,expected_results",
+    [
+        (
+            "c2V0Q29uZmlnQDU3NDU0NzRDNDQyRDYyNjQzNDY0MzczOUA1NTUzNDQ0MzJENjMzNzM2NjYzM"
+            "TY2QDQyNTU1MzQ0MkQzNDMwNjIzNTM3NjVANTU1MzQ0NTQyRDY2Mzg2MzMwMzg2M0AxRUAwMU"
+            "AwOUBGMzQ2QTU1QkJGMzg0QjdFRkVDNDBCQ0M2Qzk2QzlGNjc4NDY0Q0IyN0M4ODNENzk0QTh"
+            "EOEY4QzM1Njg2Q0Y4QDMwNEE4NkRCRjNBQzIyQjM4MUFBMEJCNTAxRjlCOUQzNTI0MjQ2MjRF"
+            "QUVGNTNFRjUwQzE2NkQ1OTY0Qzc5QzhAMzU5M0YxNThEMUI4NjhBODA4OEFEMEFFNUREMTcwO"
+            "EIyMzJBQjRENzA1ODI2MTQ4QjMwODgzRTcxMDNBMDY0OUAwMDAwMDAwMDAwMDAwMDAwMDUwME"
+            "JFNEVCQTRCMkVDQ0JDRjE3MDNCQkQ2QjJFMEQxMzUxNDMwRTc2OUY1NDgzQDFCQzE2RDY3NEV"
+            "DODAwMDA=",
+            (
+                [],
+                [
+                    "WEGLD-bd4d79",
+                    "USDC-c76f1f",
+                    "BUSD-40b57e",
+                    "USDT-f8c08c",
+                    30,
+                    1,
+                    9,
+                    "erd17dr22kal8p9halkyp0xxe9kf7euyvn9j0jyr67223k8ccdtgdnuq2wfu5s",
+                    "erd1xp9gdkln4s3t8qd2pw6sr7de6dfyy33yath48m6sc9ndt9jv08yqp84mtg",
+                    "erd1xkflzkx3hp52szy26zh9m5ts3v3j4dxhqkpxzj9npzp7wyp6qeysfpqz2m",
+                    "erd1qqqqqqqqqqqqqpgqhe8t5jewej70zupmh44jurgn29psua5l2jps3ntjj3",
+                    2000000000000000000,
+                ],
+            ),
+        ),
+        (
+            "RVNEVFRyYW5zZmVyQDU4NGM0ODJkMzg2NDYxNjEzNTMwQDQxZDZlODYyMjAyMzAwNDAwMEA3Mz"
+            "c3NjE3MDRkNzU2Yzc0Njk1NDZmNmI2NTZlNzM0NjY5Nzg2NTY0NDk2ZTcwNzU3NEAwMTc1MmM2"
+            "OWZhOGZmMDAwQDAxQDU4NGM0ODJkMzg2NDYxNjEzNTMwQDU3NDU0NzRjNDQyZDYyNjQzNDY0Mz"
+            "czOQ==",
+            (
+                [
+                    {
+                        "identifier": "XLH-8daa50",
+                        "nonce": 0,
+                        "amount": 1214524100000000000000,
+                    }
+                ],
+                [105039000000000000, True, "XLH-8daa50", "WEGLD-bd4d79"],
+            ),
+        ),
+        (
+            "TXVsdGlFU0RUTkZUVHJhbnNmZXJAMDAwMDAwMDAwMDAwMDAwMDA1MDAwMGI0YzA5NDk0N2U0Mj"
+            "dkNzk5MzFhOGJhZDgxMzE2Yjc5N2QyMzhjZGIzZkAwMkA1YTRmNDcyZDYzMzYzNjMyMzMzOUBA"
+            "MDI4MjE1ZTQwNEA1NzQ1NDc0YzQ0MmQ2MjY0MzQ2NDM3MzlAQDE1ZjY5OTcxODIzNTMyQDYxNj"
+            "Q2NDRjNjk3MTc1Njk2NDY5NzQ3OUAwMUAwMQ==",
+            (
+                [
+                    {
+                        "identifier": "ZOG-c66239",
+                        "nonce": 0,
+                        "amount": 10772407300,
+                    },
+                    {
+                        "identifier": "WEGLD-bd4d79",
+                        "nonce": 0,
+                        "amount": 6182113405711666,
+                    },
+                ],
+                [1, 1],
+            ),
+        ),
+    ],
+)
+def test_decode_endpoint_input_data(b64_input_data: str, expected_results: List):
+    # Given
+    file_path = Path("tests/data/mycontract.abi.json")
+    abi_serializer = AbiSerializer.from_abi(file_path)
+    input_data = base64.b64decode(b64_input_data).decode()
+
+    # When
+    results = abi_serializer.decode_endpoint_input_data(input_data)
+
+    # Then
+    assert results == expected_results
