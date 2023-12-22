@@ -6,6 +6,7 @@ and deserialize complex types
 """
 from __future__ import annotations
 from copy import deepcopy
+from dataclasses import asdict
 import json
 
 from pathlib import Path
@@ -36,8 +37,37 @@ class AbiSerializer:
         self.structs = {} if structs is None else structs
         self.enums = {} if enums is None else enums
 
+    def to_dict(self) -> Dict:
+        """
+        Export this instance as a Dict
+
+        :return: instance as dict
+        :rtype: Dict
+        """
+        return {
+            "endpoints": {e: asdict(v) for e, v in self.endpoints.items()},
+            "structs": {e: asdict(v) for e, v in self.structs.items()},
+            "enums": {e: asdict(v) for e, v in self.enums.items()},
+        }
+
     @staticmethod
     def from_dict(data: Dict) -> AbiSerializer:
+        """
+        Parse a dictionnary representing an AbiSerializer and instantiate it
+
+        :param data: data to parse
+        :type data: Dict
+        :return: instance generated from the file
+        :rtype: AbiSerializer
+        """
+        return {
+            "endpoints": {e: AbiEndpoint(**v) for e, v in data["endpoints"]},
+            "structs": {e: AbiStruct(**v) for e, v in data["structs"]},
+            "enums": {e: AbiEnum(**v) for e, v in data["enums"]},
+        }
+
+    @staticmethod
+    def from_abi_dict(data: Dict) -> AbiSerializer:
         """
         Parse a dictionnary as an ABI file and construct an AbiSerializer
         instance accordingly
@@ -78,7 +108,7 @@ class AbiSerializer:
         """
         with open(abi_file_path.as_posix(), "r", encoding="utf-8") as file:
             raw_content = json.load(file)
-        return cls.from_dict(raw_content)
+        return cls.from_abi_dict(raw_content)
 
     def decode_iterable(
         self, inner_types: List[str], data: bytes
