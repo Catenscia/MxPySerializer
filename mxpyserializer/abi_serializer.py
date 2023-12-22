@@ -632,27 +632,43 @@ class AbiSerializer:
         except KeyError as err:
             raise ValueError(f"Unknown endpoint {endpoint_name}") from err
         bytes_data_parts = query_response.get_return_data_parts()
+        return self.decode_io(endpoint.outputs, bytes_data_parts)
+
+    def decode_io(
+        self, io_list: List[Dict], bytes_data_parts: List[bytes]
+    ) -> List[Any]:
+        """
+        Decode a list of bytes parts based on a list of inputs or outputs types
+
+        :param io_list: orders list of types definitions to expect
+        :type io_list: List[Dict]
+        :param bytes_data_parts: data to decode
+        :type bytes_data_parts: List[bytes]
+        :return: decoded data
+        :rtype: List[Any]
+        """
         decoded_results = []
-        for output in endpoint.outputs:
-            output_type = output["type"]
-            is_multiresults = output.get(
-                "multi_result", False
-            ) and not output_type.startswith("optional")
+        for io_element in io_list:
+            io_type = io_element["type"]
+            is_multiresults = (
+                io_element.get("multi_result", False)
+                or io_element.get("multi_arg", False)
+            ) and not io_type.startswith("optional")
             if is_multiresults:
                 bytes_data, bytes_data_parts = bytes_data_parts, []
             elif len(bytes_data_parts) == 0:  # option value case
                 bytes_data = b""
             else:
                 bytes_data = bytes_data_parts.pop(0)
-            decoded_output = self.top_decode(output_type, bytes_data)
+            decoded_output = self.top_decode(io_type, bytes_data)
             if is_multiresults:
                 if decoded_output is not None:
                     decoded_results.extend(decoded_output)
             else:
-                if not output_type.startswith("optional") or decoded_output is not None:
+                if not io_type.startswith("optional") or decoded_output is not None:
                     decoded_results.append(decoded_output)
         if len(bytes_data_parts) > 0:
-            raise ValueError(f"Endpoint {endpoint_name} return more data than expected")
+            raise ValueError(f"Unexpected data left after decoding {bytes_data_parts}")
         return decoded_results
 
     def encode_endpoint_inputs(self, endpoint_name: str, values: List) -> List[bytes]:
@@ -695,3 +711,72 @@ class AbiSerializer:
                 ):
                     encoded_inputs.append(encoded_input)
         return encoded_inputs
+
+    def decode_endpoint_input_data(
+        self, raw_input_data: str
+    ) -> Tuple[str, List[Dict], List[Any]]:
+        """
+        Decode the input data of a transaction that calls an endpoint of
+        the smart-contract
+
+        :param raw_input_data: full input data (not b64 encoded)
+        :type raw_input_data: str
+        :return: endpoint name, Esdt transfers, list of decoded inputs
+        :rtype: Tuple[str, List[Dict], List[Any]]
+        """
+        data_parts = raw_input_data.split("@")
+        transfers = []
+        decoded_inputs = []
+        if len(data_parts) == 0:
+            return transfers, decoded_inputs
+
+        # first decode if there is any transfer
+        first_function = data_parts.pop(0)  # first function is not serialized
+        if first_function == "ESDTTransfer":
+            transfers.append(
+                {
+                    "identifier": self.top_decode(
+                        "TokenIdentifier", bytes.fromhex(data_parts.pop(0))
+                    ),
+                    "nonce": 0,
+                    "amount": self.top_decode(
+                        "BigUint", bytes.fromhex(data_parts.pop(0))
+                    ),
+                }
+            )
+            endpoint_name = self.top_decode(
+                "utf-8 string", bytes.fromhex(data_parts.pop(0))
+            )
+        elif first_function == "MultiESDTNFTTransfer":
+            bytes.fromhex(data_parts.pop(0))  # reciever
+            n_transfers = self.top_decode("u32", bytes.fromhex(data_parts.pop(0)))
+            for _ in range(n_transfers):
+                transfers.append(
+                    {
+                        "identifier": self.top_decode(
+                            "TokenIdentifier", bytes.fromhex(data_parts.pop(0))
+                        ),
+                        "nonce": self.top_decode(
+                            "u64", bytes.fromhex(data_parts.pop(0))
+                        ),
+                        "amount": self.top_decode(
+                            "BigUint", bytes.fromhex(data_parts.pop(0))
+                        ),
+                    }
+                )
+            endpoint_name = self.top_decode(
+                "utf-8 string", bytes.fromhex(data_parts.pop(0))
+            )
+        else:
+            endpoint_name = first_function
+
+        # then decode the inputs
+        try:
+            endpoint = self.endpoints[endpoint_name]
+        except KeyError as err:
+            raise ValueError(f"Unknown endpoint {endpoint_name}") from err
+
+        decoded_inputs = self.decode_io(
+            endpoint.inputs, [bytes.fromhex(e) for e in data_parts]
+        )
+        return endpoint_name, transfers, decoded_inputs
