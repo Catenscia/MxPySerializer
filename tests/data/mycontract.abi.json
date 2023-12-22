@@ -10,6 +10,62 @@
     },
     "endpoints": [
         {
+            "name": "setConfig",
+            "onlyOwner": true,
+            "mutability": "mutable",
+            "inputs": [
+                {
+                    "name": "token1",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "token2",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "token3",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "token4",
+                    "type": "TokenIdentifier"
+                },
+                {
+                    "name": "param1",
+                    "type": "u64"
+                },
+                {
+                    "name": "param2",
+                    "type": "u64"
+                },
+                {
+                    "name": "param3",
+                    "type": "u64"
+                },
+                {
+                    "name": "treasury_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "staking_reward_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "burner_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "unwrap_address",
+                    "type": "Address"
+                },
+                {
+                    "name": "registering_cost",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
+        },
+        {
             "name": "getSum",
             "mutability": "readonly",
             "inputs": [],
@@ -111,6 +167,47 @@
                     "multi_result": true
                 }
             ]
+        },
+        {
+            "name": "swapMultiTokensFixedInput",
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [
+                {
+                    "name": "amount_out_min",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "unwrap_required",
+                    "type": "bool"
+                },
+                {
+                    "name": "path_args",
+                    "type": "variadic<TokenIdentifier>",
+                    "multi_arg": true
+                }
+            ],
+            "outputs": []
+        },
+        {
+            "name": "addLiquidity",
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [
+                {
+                    "name": "first_token_amount_min",
+                    "type": "BigUint"
+                },
+                {
+                    "name": "second_token_amount_min",
+                    "type": "BigUint"
+                }
+            ],
+            "outputs": []
         }
     ],
     "events": [],

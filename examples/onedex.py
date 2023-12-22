@@ -78,6 +78,33 @@ def example_get_amount_in():
     print(json.dumps(parsed_results, indent=4))
 
 
+def example_decode_transaction_input_data():
+    """
+    In this example, we will decode the input data of a transaction that call the
+    addLiquidity endpoint of the contract
+    """
+    # create the serializer
+    file_path = Path("abis/onedex-sc.abi.json")
+    abi_serializer = AbiSerializer.from_abi(file_path)
+
+    # fetch the raw data of the transaction
+    proxy_provider = ProxyNetworkProvider("https://gateway.multiversx.com")
+    tx_hash = "e9e3148154dd549c4902c8472414ec2b9eef805d038e33345e845118189d82f3"
+    tx = proxy_provider.get_transaction(tx_hash)
+    raw_input_data = tx.data
+
+    # parse the data and display iy
+    (
+        endpoint_name,
+        transfers,
+        decoded_input_args,
+    ) = abi_serializer.decode_endpoint_input_data(raw_input_data)
+    print(endpoint_name)
+    print(json.dumps(transfers, indent=4))
+    print(json.dumps(decoded_input_args, indent=4))
+
+
 if __name__ == "__main__":
     example_get_pair_status()
     example_get_amount_in()
+    example_decode_transaction_input_data()
