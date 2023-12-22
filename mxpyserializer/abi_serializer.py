@@ -719,8 +719,8 @@ class AbiSerializer:
         Decode the input data of a transaction that calls an endpoint of
         the smart-contract
 
-        :param b64_input_data: full input data (not b64 encoded)
-        :type b64_input_data: str
+        :param raw_input_data: full input data (not b64 encoded)
+        :type raw_input_data: str
         :return: endpoint name, Esdt transfers, list of decoded inputs
         :rtype: Tuple[str, List[Dict], List[Any]]
         """
