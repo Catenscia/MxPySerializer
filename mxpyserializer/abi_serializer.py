@@ -82,6 +82,14 @@ class AbiSerializer:
             for endpoint in data["endpoints"]:
                 endpoints[endpoint["name"]] = AbiEndpoint.from_dict(endpoint)
 
+        if "constructor" in data:
+            endpoint_kargs = {
+                "name": "init",
+                "mutability": "mutable",
+                **data["constructor"],
+            }
+            endpoints[endpoint_kargs["name"]] = AbiEndpoint.from_dict(endpoint_kargs)
+
         structs = {}
         enums = {}
         for type_name, element in data.get("types", {}).items():
