@@ -302,6 +302,7 @@ def test_top_encode(type_name: str, value: Any, expected_results: bytes):
             ["WEGLD-abcdef", 789],
             [b"\x01\x00\x00\x00\x0cWEGLD-abcdef", b"\x03\x15"],
         ),
+        ("init", ["TFK-15987"], [b"TFK-15987"]),
     ],
 )
 def test_inputs_encode(endpoint_name: str, values: List, expected_results: List[bytes]):

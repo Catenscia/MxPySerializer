@@ -5,7 +5,12 @@
     ],
     "name": "MyContract",
     "constructor": {
-        "inputs": [],
+        "inputs": [
+            {
+                "name": "token1",
+                "type": "TokenIdentifier"
+            }
+        ],
         "outputs": []
     },
     "endpoints": [
