@@ -1,6 +1,6 @@
 from typing import Tuple
 import pytest
-from mxpyserializer import basic_type
+from mxpyserializer import basic_type, errors
 
 
 @pytest.mark.parametrize(
@@ -127,7 +127,7 @@ def test_basic_integer_type(type_prefix: str, type_number: int):
         assert err.args[0] == f"Invalid integer type: {type_number}"
 
 
-def test_unkown_basic_type_nested_decode():
+def test_unknown_basic_type_nested_decode():
     # Given
     type_name = "List<TokenIdentifier>"
 
@@ -135,8 +135,8 @@ def test_unkown_basic_type_nested_decode():
     try:
         basic_type.nested_decode_basic(type_name, b"")
         raise RuntimeError("Above line should raise an error")
-    except ValueError as err:
-        assert err.args[0] == f"Unkown basic type {type_name}"
+    except errors.UnknownType as err:
+        assert err.args[0] == f"Unknown type: {type_name}"
 
 
 def test_extract_from_size():
@@ -217,7 +217,7 @@ def test_wrong_bool_top_decode():
         assert err.args[0] == "Expected a boolean but found the value 2"
 
 
-def test_unkown_basic_type_top_decode():
+def test_unknown_basic_type_top_decode():
     # Given
     type_name = "List<TokenIdentifier>"
 
@@ -225,8 +225,8 @@ def test_unkown_basic_type_top_decode():
     try:
         basic_type.top_decode_basic(type_name, b"")
         raise RuntimeError("Above line should raise an error")
-    except ValueError as err:
-        assert err.args[0] == f"Unkown basic type {type_name}"
+    except errors.UnknownType as err:
+        assert err.args[0] == f"Unknown type: {type_name}"
 
 
 def test_top_decode_address():

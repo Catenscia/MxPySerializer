@@ -9,6 +9,8 @@ from typing import Tuple, Union
 from multiversx_sdk_core.address import Address
 from multiversx_sdk_core.constants import INTEGER_MAX_NUM_BYTES
 
+from mxpyserializer import errors
+
 BASIC_TYPES = (
     "bytes",
     "bool",
@@ -167,7 +169,7 @@ def nested_decode_basic(
         element, data = get_bytes_element_from_size(data)
         return element.decode("utf-8"), data
 
-    raise ValueError(f"Unkown basic type {type_name}")
+    raise errors.UnknownType(type_name)
 
 
 def top_decode_basic(type_name: str, data: bytes) -> Union[int, str, bool, Address]:
@@ -204,7 +206,7 @@ def top_decode_basic(type_name: str, data: bytes) -> Union[int, str, bool, Addre
     if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
         return data.decode("utf-8")
 
-    raise ValueError(f"Unkown basic type {type_name}")
+    raise errors.UnknownType(type_name)
 
 
 def nested_encode_basic(
@@ -259,7 +261,7 @@ def nested_encode_basic(
         if isinstance(value, str):
             return bytes.fromhex(Address.from_bech32(value).to_hex())
         raise ValueError(
-            f"Address type expected an Adress or a bech32 strin but got {value}"
+            f"Address type expected an Adress or a bech32 string but got {value}"
         )
 
     if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
@@ -267,7 +269,7 @@ def nested_encode_basic(
         encoded_size = nested_encode_basic("u32", len(encoded_value))
         return encoded_size + encoded_value
 
-    raise ValueError(f"Unkown basic type {type_name}")
+    raise errors.UnknownType(type_name)
 
 
 def top_encode_basic(type_name: str, value: Union[int, str, bool, Address]) -> bytes:
@@ -311,4 +313,4 @@ def top_encode_basic(type_name: str, value: Union[int, str, bool, Address]) -> b
     if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
         return str(value).encode("utf-8")
 
-    raise ValueError(f"Unkown basic type {type_name}")
+    raise errors.UnknownType(type_name)
