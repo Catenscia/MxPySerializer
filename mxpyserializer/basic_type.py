@@ -223,12 +223,9 @@ def nested_encode_basic(
     :rtype: bytes
     """
     if type_name == "bytes":
-        if not isinstance(value, bytes):
-            raise TypeError(
-                f"for bytes type, bytes value should be provided, got {value}"
-            )
-        encoded_size = nested_encode_basic("u32", len(value))
-        return encoded_size + value
+        encoded_value = top_encode_basic("bytes", value)
+        encoded_size = nested_encode_basic("u32", len(encoded_value))
+        return encoded_size + encoded_value
     if type_name == "bool":
         int_value = int(value)
         if int_value not in (0, 1):
@@ -284,11 +281,15 @@ def top_encode_basic(type_name: str, value: Union[int, str, bool, Address]) -> b
     :rtype: bytes
     """
     if type_name == "bytes":
-        if not isinstance(value, bytes):
-            raise TypeError(
-                f"for bytes type, bytes value should be provided, got {value}"
-            )
-        return value
+        if isinstance(value, bytes):
+            return value
+        if isinstance(value, int):
+            return top_encode_basic("u8", value)
+        if isinstance(value, list):
+            return b"".join([top_encode_basic("bytes", v) for v in value])
+        if isinstance(value, str):
+            return value.encode("utf-8")
+        raise TypeError(f"Unable to convert {value} to bytes")
     if type_name == "bool":
         int_value = int(value)
         if int_value not in (0, 1):
