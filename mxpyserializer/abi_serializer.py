@@ -60,11 +60,13 @@ class AbiSerializer:
         :return: instance generated from the file
         :rtype: AbiSerializer
         """
-        return {
-            "endpoints": {e: AbiEndpoint(**v) for e, v in data["endpoints"]},
-            "structs": {e: AbiStruct(**v) for e, v in data["structs"]},
-            "enums": {e: AbiEnum(**v) for e, v in data["enums"]},
-        }
+        return AbiSerializer(
+            endpoints={
+                e: AbiEndpoint.from_dict(v) for e, v in data["endpoints"].items()
+            },
+            structs={e: AbiStruct.from_dict(v) for e, v in data["structs"].items()},
+            enums={e: AbiEnum.from_dict(v) for e, v in data["enums"].items()},
+        )
 
     @staticmethod
     def from_abi_dict(data: Dict) -> AbiSerializer:
