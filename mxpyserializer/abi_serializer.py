@@ -17,7 +17,7 @@ from multiversx_sdk_network_providers.contract_query_response import (
     ContractQueryResponse,
 )
 
-from mxpyserializer import basic_type
+from mxpyserializer import basic_type, errors
 from mxpyserializer.data_models import AbiEndpoint, AbiField, AbiStruct, AbiEnum
 
 
@@ -60,11 +60,13 @@ class AbiSerializer:
         :return: instance generated from the file
         :rtype: AbiSerializer
         """
-        return {
-            "endpoints": {e: AbiEndpoint(**v) for e, v in data["endpoints"]},
-            "structs": {e: AbiStruct(**v) for e, v in data["structs"]},
-            "enums": {e: AbiEnum(**v) for e, v in data["enums"]},
-        }
+        return AbiSerializer(
+            endpoints={
+                e: AbiEndpoint.from_dict(v) for e, v in data["endpoints"].items()
+            },
+            structs={e: AbiStruct.from_dict(v) for e, v in data["structs"].items()},
+            enums={e: AbiEnum.from_dict(v) for e, v in data["enums"].items()},
+        )
 
     @staticmethod
     def from_abi_dict(data: Dict) -> AbiSerializer:
@@ -82,6 +84,14 @@ class AbiSerializer:
             for endpoint in data["endpoints"]:
                 endpoints[endpoint["name"]] = AbiEndpoint.from_dict(endpoint)
 
+        if "constructor" in data:
+            endpoint_kargs = {
+                "name": "init",
+                "mutability": "mutable",
+                **data["constructor"],
+            }
+            endpoints[endpoint_kargs["name"]] = AbiEndpoint.from_dict(endpoint_kargs)
+
         structs = {}
         enums = {}
         for type_name, element in data.get("types", {}).items():
@@ -90,9 +100,7 @@ class AbiSerializer:
             elif element["type"] == "enum":
                 enums[type_name] = AbiEnum.from_dict({"name": type_name, **element})
             else:
-                raise ValueError(
-                    f"Uknown type {element['type']} for custom type {type_name}"
-                )
+                raise errors.UnknownCustomTypeType(type_name, element["type"])
 
         return AbiSerializer(endpoints, structs, enums)
 
@@ -143,10 +151,7 @@ class AbiSerializer:
         """
         encoded_value = bytes()
         if len(value) != len(inner_types):
-            raise ValueError(
-                f"Number of values and associated types don't match: {len(value)} "
-                f"!= {len(inner_types)}"
-            )
+            raise errors.ElementsNumberMismatch(value, inner_types)
         for inner_type, inner_value in zip(inner_types, value):
             encoded_value += self.nested_encode(inner_type, inner_value)
         return encoded_value
@@ -207,9 +212,7 @@ class AbiSerializer:
         try:
             type_definition = self.structs[type_name]
         except KeyError as err:
-            raise ValueError(
-                f"Struct {type_name} is not defined by the ABI file"
-            ) from err
+            raise errors.UnknownStruct(type_name) from err
 
         return self.nested_decode_fields(type_definition.fields, data)
 
@@ -228,14 +231,9 @@ class AbiSerializer:
         try:
             type_definition = self.structs[type_name]
         except KeyError as err:
-            raise ValueError(
-                f"Struct {type_name} is not defined by the ABI file"
-            ) from err
+            raise errors.UnknownStruct(type_name) from err
         if len(data) != len(type_definition.fields):
-            raise ValueError(
-                f"{type_name} expects {len(type_definition.fields)} "
-                f"fields but got {len(data)}"
-            )
+            raise errors.ElementsNumberMismatch(data, type_definition.fields)
         if isinstance(data, List):
             data = {field.name: d for field, d in zip(type_definition.fields, data)}
         results = bytes()
@@ -243,9 +241,7 @@ class AbiSerializer:
             try:
                 value = data[field.name]
             except KeyError as err:
-                raise ValueError(
-                    f"Missing field {field.name} for struct {type_name}"
-                ) from err
+                raise errors.MissingStuctField(type_name, field.name) from err
             results += self.nested_encode(field.type, value)
         return results
 
@@ -267,9 +263,7 @@ class AbiSerializer:
         try:
             abi_enum = self.enums[type_name]
         except KeyError as err:
-            raise ValueError(
-                f"Struct {type_name} is not defined by the ABI file"
-            ) from err
+            raise errors.UnknownEnum(type_name) from err
 
         if len(data) == 0:  # Top encoding case for discriminant 0
             discriminant = 0
@@ -283,9 +277,7 @@ class AbiSerializer:
                 break
 
         if selected_variant is None:
-            raise ValueError(
-                f"Discriminant {discriminant} is not defined in enum {type_name}"
-            )
+            raise errors.UnknownEnumDiscriminant(type_name, discriminant)
 
         if len(selected_variant.fields):
             inner_types = [f.type for f in selected_variant.fields]
@@ -321,9 +313,7 @@ class AbiSerializer:
         try:
             abi_enum = self.enums[type_name]
         except KeyError as err:
-            raise ValueError(
-                f"Struct {type_name} is not defined by the ABI file"
-            ) from err
+            raise errors.UnknownEnum(type_name) from err
         if isinstance(value, int):  # assuming discriminant
             discriminant, name, inner_values = value, None, None
         elif isinstance(value, str):  # assuming name
@@ -333,7 +323,9 @@ class AbiSerializer:
             name = value.get("name", None)
             inner_values = value.get("values", None)
         else:
-            raise TypeError("value should be an int, a str or a dict")
+            raise TypeError(
+                f"Enum value should be an int, a str or a dict, got {type(value)}"
+            )
 
         selected_variant = None
         for variant in abi_enum.variants:
@@ -342,9 +334,7 @@ class AbiSerializer:
                 break
 
         if selected_variant is None:
-            raise ValueError(
-                f"No variant found for name = {name} and discriminant = {discriminant}"
-            )
+            raise errors.EnumVariantNotFound(type_name, name, discriminant)
 
         if top_encode and selected_variant.discriminant == 0 and inner_values is None:
             return bytes()
@@ -354,7 +344,7 @@ class AbiSerializer:
         )
         if len(selected_variant.fields):
             if not isinstance(inner_values, list):
-                raise ValueError(
+                raise TypeError(
                     "Expected a list of inner values for variant "
                     f"{selected_variant.discriminant} of the enum {type_name}"
                 )
@@ -410,7 +400,7 @@ class AbiSerializer:
         if type_name in self.enums:
             return self.decode_custom_enum(type_name, data)
 
-        raise ValueError(f"Unkown type {type_name}")
+        raise errors.UnknownType(type_name)
 
     def nested_encode(self, type_name: str, value: Any) -> bytes:
         """
@@ -466,7 +456,7 @@ class AbiSerializer:
         if type_name in self.enums:
             return self.encode_custom_enum(type_name, value)
 
-        raise ValueError(f"Unkown type {type_name}")
+        raise errors.UnknownType(type_name)
 
     def top_decode(self, type_name: str, data: Union[List[bytes], bytes]) -> Any:
         """
@@ -487,10 +477,7 @@ class AbiSerializer:
                     variadic_multi_pattern.groups()[0].replace(" ", "").split(",")
                 )
                 if len(data) % len(inner_types) != 0:
-                    raise ValueError(
-                        f"Number of elements ({len(data)}) is not coherent with"
-                        f" the multi value size ({len(inner_types)})"
-                    )
+                    raise errors.MultiElementsNumberMismatch(data, inner_types)
                 results = []
                 while len(data) > 0:
                     sub_results = []
@@ -510,7 +497,7 @@ class AbiSerializer:
             elif len(data) == 1:
                 data = data[0]
             else:
-                raise ValueError(f"Data should not be a list for type {type_name}")
+                raise TypeError(f"Data should not be a list for type {type_name}")
 
         if type_name in basic_type.BASIC_TYPES:
             return basic_type.top_decode_basic(type_name, data)
@@ -533,7 +520,7 @@ class AbiSerializer:
         # for other cases, we can directly use the nested_decode function
         result, data = self.nested_decode(type_name, data)
         if len(data) != 0:
-            raise ValueError(f"Some left over bytes were not decoded: {data}")
+            raise errors.LeftOverData(data)
         return result
 
     def top_encode(self, type_name: str, value: Any) -> Union[bytes, List[bytes], None]:
@@ -559,9 +546,7 @@ class AbiSerializer:
                         "Value to encode must be an iterable for multi type"
                     )
                 if len(multi) != len(inner_types):
-                    raise ValueError(
-                        f"Expected {len(inner_types)} elements but got {multi}"
-                    )
+                    raise errors.ElementsNumberMismatch(multi, inner_types)
                 for inner_value, inner_type in zip(multi, inner_types):
                     encoded_value.append(self.top_encode(inner_type, inner_value))
             return encoded_value
@@ -630,7 +615,7 @@ class AbiSerializer:
         try:
             endpoint = self.endpoints[endpoint_name]
         except KeyError as err:
-            raise ValueError(f"Unknown endpoint {endpoint_name}") from err
+            raise errors.UnknownEndpoint(endpoint_name) from err
         bytes_data_parts = query_response.get_return_data_parts()
         return self.decode_io(endpoint.outputs, bytes_data_parts)
 
@@ -668,7 +653,7 @@ class AbiSerializer:
                 if not io_type.startswith("optional") or decoded_output is not None:
                     decoded_results.append(decoded_output)
         if len(bytes_data_parts) > 0:
-            raise ValueError(f"Unexpected data left after decoding {bytes_data_parts}")
+            raise errors.LeftOverData(bytes_data_parts)
         return decoded_results
 
     def encode_endpoint_inputs(self, endpoint_name: str, values: List) -> List[bytes]:
@@ -685,7 +670,7 @@ class AbiSerializer:
         try:
             endpoint = self.endpoints[endpoint_name]
         except KeyError as err:
-            raise ValueError(f"Unknown endpoint {endpoint_name}") from err
+            raise errors.UnknownEndpoint(endpoint_name) from err
         values_copy = deepcopy(values)
         encoded_inputs = []
         for endpoint_input in endpoint.inputs:
@@ -774,7 +759,7 @@ class AbiSerializer:
         try:
             endpoint = self.endpoints[endpoint_name]
         except KeyError as err:
-            raise ValueError(f"Unknown endpoint {endpoint_name}") from err
+            raise errors.UnknownEndpoint(endpoint_name) from err
 
         decoded_inputs = self.decode_io(
             endpoint.inputs, [bytes.fromhex(e) for e in data_parts]

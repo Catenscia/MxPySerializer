@@ -28,6 +28,7 @@ def test_abi_loading():
         "getPairs",
         "swapMultiTokensFixedInput",
         "addLiquidity",
+        "init",
     ]
     assert list(abi_serializer.structs.keys()) == [
         "MyAbiStruct",
