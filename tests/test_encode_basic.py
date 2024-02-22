@@ -54,6 +54,11 @@ def test_nested_encode_integer(
             b"\x00\x00\x00\x10heythisisastring",
         ),
         (
+            "utf-8string",
+            "heythisisastring",
+            b"\x00\x00\x00\x10heythisisastring",
+        ),
+        (
             "TokenIdentifier",
             "TKN-abcdef",
             b"\x00\x00\x00\x0ATKN-abcdef",
@@ -106,6 +111,7 @@ def test_nested_encode_basic(type_name: str, value: Any, expected_result: bytes)
         ("bool", True, b"\x01"),
         ("bool", False, b""),
         ("utf-8 string", "heythisisastring", b"heythisisastring"),
+        ("utf-8string", "heythisisastring", b"heythisisastring"),
         (
             "TokenIdentifier",
             "TKN-abcdef",

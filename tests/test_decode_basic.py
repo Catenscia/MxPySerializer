@@ -67,6 +67,11 @@ def test_nested_decode_integer_data_too_small():
             ("heythisisastring", b"\x01\x0a\xaa\xaa"),
         ),
         (
+            "utf-8string",
+            b"\x00\x00\x00\x10heythisisastring\x01\x0a\xaa\xaa",
+            ("heythisisastring", b"\x01\x0a\xaa\xaa"),
+        ),
+        (
             "TokenIdentifier",
             b"\x00\x00\x00\x0ATKN-abcdef\x01\x0a\xaa\xaa",
             ("TKN-abcdef", b"\x01\x0a\xaa\xaa"),
@@ -181,6 +186,7 @@ def test_wrong_bool_nested_decode():
         ("bool", b"\x01", True),
         ("bool", b"", False),
         ("utf-8 string", b"heythisisastring", "heythisisastring"),
+        ("utf-8string", b"heythisisastring", "heythisisastring"),
         (
             "TokenIdentifier",
             b"TKN-abcdef",
