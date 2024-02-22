@@ -3,6 +3,7 @@ author: Etienne Wallet
 
 This module contains the functions to serialize and deserialize basic types
 """
+
 import re
 from typing import Tuple, Union
 
@@ -30,6 +31,7 @@ BASIC_TYPES = (
     "TokenIdentifier",
     "EgldOrEsdtTokenIdentifier",
     "utf-8 string",
+    "utf-8string",
 )
 
 
@@ -165,7 +167,12 @@ def nested_decode_basic(
         hex_address, data = data[:32].hex(), data[32:]
         return Address.from_hex(hex_address, "erd").bech32(), data
 
-    if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
+    if type_name in (
+        "TokenIdentifier",
+        "EgldOrEsdtTokenIdentifier",
+        "utf-8 string",
+        "utf-8string",
+    ):
         element, data = get_bytes_element_from_size(data)
         return element.decode("utf-8"), data
 
@@ -203,7 +210,12 @@ def top_decode_basic(type_name: str, data: bytes) -> Union[int, str, bool, Addre
     if type_name == "Address":
         return Address.from_hex(data.hex(), "erd").bech32()
 
-    if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
+    if type_name in (
+        "TokenIdentifier",
+        "EgldOrEsdtTokenIdentifier",
+        "utf-8 string",
+        "utf-8string",
+    ):
         return data.decode("utf-8")
 
     raise errors.UnknownType(type_name)
@@ -261,7 +273,12 @@ def nested_encode_basic(
             f"Address type expected an Adress or a bech32 string but got {value}"
         )
 
-    if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
+    if type_name in (
+        "TokenIdentifier",
+        "EgldOrEsdtTokenIdentifier",
+        "utf-8 string",
+        "utf-8string",
+    ):
         encoded_value = str(value).encode("utf-8")
         encoded_size = nested_encode_basic("u32", len(encoded_value))
         return encoded_size + encoded_value
@@ -311,7 +328,12 @@ def top_encode_basic(type_name: str, value: Union[int, str, bool, Address]) -> b
             f"Address type expected an Adress or a bech32 strin but got {value}"
         )
 
-    if type_name in ("TokenIdentifier", "EgldOrEsdtTokenIdentifier", "utf-8 string"):
+    if type_name in (
+        "TokenIdentifier",
+        "EgldOrEsdtTokenIdentifier",
+        "utf-8 string",
+        "utf-8string",
+    ):
         return str(value).encode("utf-8")
 
     raise errors.UnknownType(type_name)
