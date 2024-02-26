@@ -430,6 +430,27 @@ def test_decode_from_query_response(
                 [1, 1],
             ),
         ),
+        (
+            "TXVsdGlFU0RUTkZUVHJhbnNmZXJAMDJANGY0ZTQ1MmQ2NjM5MzkzNTM0NjZAMDBAMDNiOTJmNG"
+            "JmZWQ5ZTI4MDAwQDRjNDU0NzRjNDQyZDY0MzczNDY0NjEzOUAwMEAwNzY4ZDgzNDBhNjFiMzQ2"
+            "QDYxNjQ2NDRjNjk3MTc1Njk2NDY5NzQ3OUAwMUAwMQ==",
+            (
+                "addLiquidity",
+                [
+                    {
+                        "identifier": "ONE-f9954f",
+                        "nonce": 0,
+                        "amount": 68684200000000000000,
+                    },
+                    {
+                        "identifier": "LEGLD-d74da9",
+                        "nonce": 0,
+                        "amount": 533914273867477830,
+                    },
+                ],
+                [1, 1],
+            ),
+        ),
     ],
 )
 def test_decode_endpoint_input_data(b64_input_data: str, expected_results: List):

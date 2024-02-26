@@ -4,6 +4,7 @@ author: Etienne Wallet
 This module contains the abi parser class which also have the methods to serialize
 and deserialize complex types
 """
+
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import asdict
@@ -13,6 +14,8 @@ from pathlib import Path
 import re
 from typing import Any, Dict, List, Optional, Tuple, Union, Iterable
 
+from multiversx_sdk_core import Address
+from multiversx_sdk_core.errors import ErrBadPubkeyLength
 from multiversx_sdk_network_providers.contract_query_response import (
     ContractQueryResponse,
 )
@@ -733,8 +736,13 @@ class AbiSerializer:
                 "utf-8 string", bytes.fromhex(data_parts.pop(0))
             )
         elif first_function == "MultiESDTNFTTransfer":
-            bytes.fromhex(data_parts.pop(0))  # reciever
-            n_transfers = self.top_decode("u32", bytes.fromhex(data_parts.pop(0)))
+            first_part = bytes.fromhex(data_parts.pop(0))
+            try:
+                Address.from_hex(first_part.hex(), "erd").bech32()  # receiver
+                n_transfers = self.top_decode("u32", bytes.fromhex(data_parts.pop(0)))
+            except ErrBadPubkeyLength:
+                n_transfers = self.top_decode("u32", first_part)
+
             for _ in range(n_transfers):
                 transfers.append(
                     {
