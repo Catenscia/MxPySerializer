@@ -28,6 +28,7 @@ def test_abi_loading():
         "getPairs",
         "swapMultiTokensFixedInput",
         "addLiquidity",
+        "setSwapEnabledByUser",
         "init",
     ]
     assert list(abi_serializer.structs.keys()) == [
@@ -449,6 +450,24 @@ def test_decode_from_query_response(
                     },
                 ],
                 [1, 1],
+            ),
+        ),
+        (
+            "RVNEVE5GVFRyYW5zZmVyQDRjNGI0NTUzNDQ1NDJkNjY2MzMxMzk2MjYxQDM3QDMwMDJkY2RlYT"
+            "AwY2I0ZmMxOEAwMDAwMDAwMDAwMDAwMDAwMDUwMDA2YjQ2YjE1MDkxZDczMGU1ZjNiOGM4N2Mz"
+            "ZTljOGE1ZDgxOGM3YmE1NDgzQDczNjU3NDUzNzc2MTcwNDU2ZTYxNjI2YzY1NjQ0Mjc5NTU3Mz"
+            "Y1NzJAMDAwMDAwMDAwMDAwMDAwMDA1MDA4YzY4YzMxMTg2YzNkOTZmYmEzOTMyZjM4ZDg1NDFm"
+            "MjVmODkyOTFiNTQ4Mw==",
+            (
+                "setSwapEnabledByUser",
+                [
+                    {
+                        "identifier": "LKESDT-fc19ba",
+                        "nonce": 55,
+                        "amount": 885649999999999999000,
+                    }
+                ],
+                ["erd1qqqqqqqqqqqqqpgq335vxyvxc0vklw3extecmp2p7f0cj2gm2jpswk0kgg"],
             ),
         ),
     ],
