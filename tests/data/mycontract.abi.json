@@ -213,6 +213,20 @@
                 }
             ],
             "outputs": []
+        },
+        {
+            "name": "setSwapEnabledByUser",
+            "mutability": "mutable",
+            "payableInTokens": [
+                "*"
+            ],
+            "inputs": [
+                {
+                    "name": "_",
+                    "type": "Address"
+                }
+            ],
+            "outputs": []
         }
     ],
     "events": [],

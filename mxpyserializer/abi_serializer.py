@@ -760,6 +760,24 @@ class AbiSerializer:
             endpoint_name = self.top_decode(
                 "utf-8 string", bytes.fromhex(data_parts.pop(0))
             )
+        elif first_function == "ESDTNFTTransfer":
+            transfers.append(
+                {
+                    "identifier": self.top_decode(
+                        "TokenIdentifier", bytes.fromhex(data_parts.pop(0))
+                    ),
+                    "nonce": self.top_decode("u64", bytes.fromhex(data_parts.pop(0))),
+                    "amount": self.top_decode(
+                        "BigUint", bytes.fromhex(data_parts.pop(0))
+                    ),
+                }
+            )
+            Address.from_hex(
+                bytes.fromhex(data_parts.pop(0)).hex(), "erd"
+            ).bech32()  # receiver
+            endpoint_name = self.top_decode(
+                "utf-8 string", bytes.fromhex(data_parts.pop(0))
+            )
         else:
             endpoint_name = first_function
 
