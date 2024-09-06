@@ -17,6 +17,7 @@ Dev
 DevOps
 env
 environ
+github
 json
 https
 os
@@ -25,6 +26,7 @@ PyPI
 pytest
 Readthedocs
 yaml
+serializer
 svg
 str
 utils
