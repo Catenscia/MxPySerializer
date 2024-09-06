@@ -99,7 +99,7 @@ class AbiSerializer:
             endpoint_kargs = {
                 "name": "upgrade",
                 "mutability": "mutable",
-                **data["constructor"],
+                **data["upgradeConstructor"],
             }
             endpoints[endpoint_kargs["name"]] = AbiEndpoint.from_dict(endpoint_kargs)
 
