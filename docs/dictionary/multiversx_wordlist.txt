@@ -1,6 +1,7 @@
 abi
 bech
 BigUint
+ContractQueryBuilder
 devnet
 egld
 eGLD
@@ -25,6 +26,8 @@ mx
 py
 NFT
 NFTs
+Onedex
+OneDex
 OptionalValue
 pem
 ProxyNetworkProvider

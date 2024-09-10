@@ -41,6 +41,38 @@ def test_abi_loading():
     assert len(abi_serializer.structs["MyAbiStruct"].fields) == 3
 
 
+def test_abi_2_loading():
+    # Given
+    file_path = Path("tests/data/mycontract_2.abi.json")
+
+    # When
+    abi_serializer = AbiSerializer.from_abi(file_path)
+
+    # Then
+    assert list(abi_serializer.endpoints.keys()) == [
+        "setConfig",
+        "getSum",
+        "add",
+        "myEndpoint",
+        "myEndpoint2",
+        "endpoint_5",
+        "getPairs",
+        "swapMultiTokensFixedInput",
+        "addLiquidity",
+        "setSwapEnabledByUser",
+        "init",
+        "upgrade"
+    ]
+    assert list(abi_serializer.structs.keys()) == [
+        "MyAbiStruct",
+        "MyAbiStruct2",
+        "Pair",
+    ]
+    assert list(abi_serializer.enums.keys()) == ["State", "MyAbiEnum"]
+
+    assert len(abi_serializer.structs["MyAbiStruct"].fields) == 3
+
+
 @pytest.mark.parametrize(
     "enum_name,data,expected_results",
     [
