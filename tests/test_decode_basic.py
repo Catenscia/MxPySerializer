@@ -6,14 +6,14 @@ from mxpyserializer import basic_type, errors
 @pytest.mark.parametrize(
     "data, type_bytes_length, signed, expected_result",
     [
-        (b"\x00\x00\x00\x0A", 4, False, (10, b"")),
-        (b"\xF0\x00\x00\x0A", 4, False, (4026531850, b"")),
-        (b"\x00\x00\x00\x0A", 1, False, (0, b"\x00\x00\x0A")),
-        (b"\x01\x04\xEF\x0A", 2, False, (260, b"\xEF\x0A")),
-        (b"\x00\x00\x00\x0A", 4, True, (10, b"")),
-        (b"\xF0\x00\x00\x0A", 4, True, (-268435446, b"")),
-        (b"\x00\x00\x00\x0A", 1, True, (0, b"\x00\x00\x0A")),
-        (b"\x01\x04\xEF\x0A", 2, True, (260, b"\xEF\x0A")),
+        (b"\x00\x00\x00\x0a", 4, False, (10, b"")),
+        (b"\xf0\x00\x00\x0a", 4, False, (4026531850, b"")),
+        (b"\x00\x00\x00\x0a", 1, False, (0, b"\x00\x00\x0a")),
+        (b"\x01\x04\xef\x0a", 2, False, (260, b"\xef\x0a")),
+        (b"\x00\x00\x00\x0a", 4, True, (10, b"")),
+        (b"\xf0\x00\x00\x0a", 4, True, (-268435446, b"")),
+        (b"\x00\x00\x00\x0a", 1, True, (0, b"\x00\x00\x0a")),
+        (b"\x01\x04\xef\x0a", 2, True, (260, b"\xef\x0a")),
     ],
 )
 def test_nested_decode_integer(
@@ -31,7 +31,7 @@ def test_nested_decode_integer(
 
 def test_nested_decode_integer_data_too_small():
     # Given
-    data = b"\x00\x00\x00\x0A"
+    data = b"\x00\x00\x00\x0a"
     type_bytes_length = 8
 
     # When
@@ -48,16 +48,16 @@ def test_nested_decode_integer_data_too_small():
 @pytest.mark.parametrize(
     "type_name, data, expected_result",
     [
-        ("u32", b"\x00\x00\x00\x0A", (10, b"")),
-        ("u32", b"\xF0\x00\x00\x0A", (4026531850, b"")),
-        ("u8", b"\x00\x00\x00\x0A", (0, b"\x00\x00\x0A")),
-        ("usize", b"\x08\x00\x00\x0A", (134217738, b"")),
-        ("u16", b"\x01\x04\xEF\x0A", (260, b"\xEF\x0A")),
-        ("i32", b"\x00\x00\x00\x0A", (10, b"")),
-        ("i32", b"\xF0\x00\x00\x0A", (-268435446, b"")),
-        ("i8", b"\x00\x00\x00\x0A", (0, b"\x00\x00\x0A")),
-        ("isize", b"\x00\x00\x00\x0F\x0A", (15, b"\x0A")),
-        ("i16", b"\x01\x04\xEF\x0A", (260, b"\xEF\x0A")),
+        ("u32", b"\x00\x00\x00\x0a", (10, b"")),
+        ("u32", b"\xf0\x00\x00\x0a", (4026531850, b"")),
+        ("u8", b"\x00\x00\x00\x0a", (0, b"\x00\x00\x0a")),
+        ("usize", b"\x08\x00\x00\x0a", (134217738, b"")),
+        ("u16", b"\x01\x04\xef\x0a", (260, b"\xef\x0a")),
+        ("i32", b"\x00\x00\x00\x0a", (10, b"")),
+        ("i32", b"\xf0\x00\x00\x0a", (-268435446, b"")),
+        ("i8", b"\x00\x00\x00\x0a", (0, b"\x00\x00\x0a")),
+        ("isize", b"\x00\x00\x00\x0f\x0a", (15, b"\x0a")),
+        ("i16", b"\x01\x04\xef\x0a", (260, b"\xef\x0a")),
         ("BigUint", b"\x00\x00\x00\x02\x01\xa2\xaa\xaa\xaa", (418, b"\xaa\xaa\xaa")),
         ("BigInt", b"\x00\x00\x00\x02\x81\xa2\xaa\xaa\xaa", (-32350, b"\xaa\xaa\xaa")),
         ("bool", b"\x01\x0a", (True, b"\x0a")),
@@ -73,7 +73,7 @@ def test_nested_decode_integer_data_too_small():
         ),
         (
             "TokenIdentifier",
-            b"\x00\x00\x00\x0ATKN-abcdef\x01\x0a\xaa\xaa",
+            b"\x00\x00\x00\x0aTKN-abcdef\x01\x0a\xaa\xaa",
             ("TKN-abcdef", b"\x01\x0a\xaa\xaa"),
         ),
         (
@@ -81,7 +81,7 @@ def test_nested_decode_integer_data_too_small():
             b"\x00\x00\x00\x04EGLD\x01\x0a\xaa\xaa",
             ("EGLD", b"\x01\x0a\xaa\xaa"),
         ),
-        ("bytes", b"\x00\x00\x00\x01\xAA\xEE", (b"\xAA", b"\xEE")),
+        ("bytes", b"\x00\x00\x00\x01\xaa\xee", (b"\xaa", b"\xee")),
     ],
 )
 def test_nested_decode_basic(
@@ -171,15 +171,15 @@ def test_wrong_bool_nested_decode():
 @pytest.mark.parametrize(
     "type_name, data, expected_result",
     [
-        ("u32", b"\x0A", 10),
-        ("u32", b"\xF0\x00\x00\x0A", 4026531850),
+        ("u32", b"\x0a", 10),
+        ("u32", b"\xf0\x00\x00\x0a", 4026531850),
         ("u8", b"", 0),
         ("usize", b"\x08", 8),
         ("u16", b"\x01\x04", 260),
-        ("i32", b"\x0A", 10),
-        ("i32", b"\xF0\x00\x00\x0A", -268435446),
+        ("i32", b"\x0a", 10),
+        ("i32", b"\xf0\x00\x00\x0a", -268435446),
         ("i8", b"", 0),
-        ("isize", b"\x0F", 15),
+        ("isize", b"\x0f", 15),
         ("i16", b"\x01\x04", 260),
         ("BigUint", b"\x01\xa2", 418),
         ("BigInt", b"\x81\xa2", -32350),
@@ -197,7 +197,7 @@ def test_wrong_bool_nested_decode():
             b"EGLD",
             "EGLD",
         ),
-        ("bytes", b"\xAA\xEE", b"\xAA\xEE"),
+        ("bytes", b"\xaa\xee", b"\xaa\xee"),
     ],
 )
 def test_top_decode_basic(
