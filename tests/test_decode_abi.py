@@ -61,7 +61,7 @@ def test_abi_2_loading():
         "addLiquidity",
         "setSwapEnabledByUser",
         "init",
-        "upgrade"
+        "upgrade",
     ]
     assert list(abi_serializer.structs.keys()) == [
         "MyAbiStruct",
@@ -80,17 +80,17 @@ def test_abi_2_loading():
         ("MyAbiEnum", b"\x00", {"name": "Nothing", "discriminant": 0, "values": None}),
         (
             "MyAbiEnum",
-            b"\x01\x00\x00\x00\x0A",
+            b"\x01\x00\x00\x00\x0a",
             {"name": "Something", "discriminant": 1, "values": [10]},
         ),
         (
             "MyAbiEnum",
             (
-                b"\x02\x0F"
-                b"\x00\x00\x00\x02\x1E\xA5"
+                b"\x02\x0f"
+                b"\x00\x00\x00\x02\x1e\xa5"
                 b"\x00\x00\x00\x03\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03"
                 b"\x01"
-                b"\x00\x00\x00\x0A"
+                b"\x00\x00\x00\x0a"
                 b"TKN-abcdef"
             ),
             {
@@ -126,10 +126,10 @@ def test_decode_enum(enum_name: str, data: bytes, expected_results: Dict):
         (
             "MyAbiStruct2",
             (
-                b"\x00\x00\x00\x02\x1E\xA5"
+                b"\x00\x00\x00\x02\x1e\xa5"
                 b"\x00\x00\x00\x03\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03"
                 b"\x01"
-                b"\x00\x00\x00\x0A"
+                b"\x00\x00\x00\x0a"
                 b"TKN-abcdef"
             ),
             {
@@ -141,10 +141,10 @@ def test_decode_enum(enum_name: str, data: bytes, expected_results: Dict):
         (
             "MyAbiStruct",
             (
-                b"\x00\x00\x00\x02\x1E\xA5"
+                b"\x00\x00\x00\x02\x1e\xa5"
                 b"\x00\x00\x00\x03\x00\x01\x00\x00\x00\x01\x00"
                 b"\x00"
-                b"\xFF\xFF\xFF\xFF"
+                b"\xff\xff\xff\xff"
             ),
             {
                 "field1": 7845,
@@ -172,37 +172,37 @@ def test_decode_struct(struct_name: str, data: bytes, expected_results: Dict):
         (
             "MyAbiStruct2",
             (
-                b"\x00\x00\x00\x02\x1E\xA5"
+                b"\x00\x00\x00\x02\x1e\xa5"
                 b"\x00\x00\x00\x03\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03"
                 b"\x01"
-                b"\x00\x00\x00\x0A"
+                b"\x00\x00\x00\x0a"
                 b"TKN-abcdef"
-                b"\x00\x00\x00\x0A"
+                b"\x00\x00\x00\x0a"
             ),
             {
                 "field1": 7845,
                 "field2": [1, 2, 3],
                 "field3": [True, "TKN-abcdef"],
             },
-            b"\x00\x00\x00\x0A",
+            b"\x00\x00\x00\x0a",
         ),
         (
             "array5<u8>",
-            b"\x01\x02\x03\x04\x05\x1E\xA5",
+            b"\x01\x02\x03\x04\x05\x1e\xa5",
             [1, 2, 3, 4, 5],
-            b"\x1E\xA5",
+            b"\x1e\xa5",
         ),
         (
             "Option<BigUint>",
-            b"\x01\x00\x00\x00\x01\x10\x02\x03\x04\x05\x1E\xA5",
+            b"\x01\x00\x00\x00\x01\x10\x02\x03\x04\x05\x1e\xa5",
             16,
-            b"\x02\x03\x04\x05\x1E\xA5",
+            b"\x02\x03\x04\x05\x1e\xa5",
         ),
         (
             "Option<BigUint>",
-            b"\x00\x00\x00\x00\x02\x00\x10\x02\x03\x04\x05\x1E\xA5",
+            b"\x00\x00\x00\x00\x02\x00\x10\x02\x03\x04\x05\x1e\xa5",
             None,
-            b"\x00\x00\x00\x02\x00\x10\x02\x03\x04\x05\x1E\xA5",
+            b"\x00\x00\x00\x02\x00\x10\x02\x03\x04\x05\x1e\xa5",
         ),
     ],
 )

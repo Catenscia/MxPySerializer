@@ -37,7 +37,7 @@ from mxpyserializer.abi_serializer import AbiSerializer
             "MyAbiEnum",
             {"name": "Something", "discriminant": 1, "values": [10]},
             True,
-            b"\x01\x00\x00\x00\x0A",
+            b"\x01\x00\x00\x00\x0a",
         ),
         (
             "MyAbiEnum",
@@ -54,11 +54,11 @@ from mxpyserializer.abi_serializer import AbiSerializer
             },
             True,
             (
-                b"\x02\x0F"
-                b"\x00\x00\x00\x02\x1E\xA5"
+                b"\x02\x0f"
+                b"\x00\x00\x00\x02\x1e\xa5"
                 b"\x00\x00\x00\x03\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03"
                 b"\x01"
-                b"\x00\x00\x00\x0A"
+                b"\x00\x00\x00\x0a"
                 b"TKN-abcdef"
             ),
         ),
@@ -89,10 +89,10 @@ def test_encode_enum(
                 "field3": [True, "TKN-abcdef"],
             },
             (
-                b"\x00\x00\x00\x02\x1E\xA5"
+                b"\x00\x00\x00\x02\x1e\xa5"
                 b"\x00\x00\x00\x03\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03"
                 b"\x01"
-                b"\x00\x00\x00\x0A"
+                b"\x00\x00\x00\x0a"
                 b"TKN-abcdef"
             ),
         ),
@@ -104,10 +104,10 @@ def test_encode_enum(
                 [True, "TKN-abcdef"],
             ],
             (
-                b"\x00\x00\x00\x02\x1E\xA5"
+                b"\x00\x00\x00\x02\x1e\xa5"
                 b"\x00\x00\x00\x03\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03"
                 b"\x01"
-                b"\x00\x00\x00\x0A"
+                b"\x00\x00\x00\x0a"
                 b"TKN-abcdef"
             ),
         ),
@@ -119,10 +119,10 @@ def test_encode_enum(
                 "field3": [False, -1],
             },
             (
-                b"\x00\x00\x00\x02\x1E\xA5"
+                b"\x00\x00\x00\x02\x1e\xa5"
                 b"\x00\x00\x00\x03\x00\x01\x00\x00\x00\x01\x00"
                 b"\x00"
-                b"\xFF\xFF\xFF\xFF"
+                b"\xff\xff\xff\xff"
             ),
         ),
     ],
@@ -152,10 +152,10 @@ def test_encode_struct(
                 "field3": [True, "TKN-abcdef"],
             },
             (
-                b"\x00\x00\x00\x02\x1E\xA5"
+                b"\x00\x00\x00\x02\x1e\xa5"
                 b"\x00\x00\x00\x03\x00\x00\x00\x01\x00\x00\x00\x02\x00\x00\x00\x03"
                 b"\x01"
-                b"\x00\x00\x00\x0A"
+                b"\x00\x00\x00\x0a"
                 b"TKN-abcdef"
             ),
         ),
@@ -292,11 +292,11 @@ def test_top_encode(type_name: str, value: Any, expected_results: bytes):
         (
             "myEndpoint",
             [15, True, "TFK-15987", "TRE-abcdef"],
-            [b"\x0F", b"\x01", b"TFK-15987", b"TRE-abcdef"],
+            [b"\x0f", b"\x01", b"TFK-15987", b"TRE-abcdef"],
         ),
-        ("myEndpoint", [15, False], [b"\x0F", b""]),
-        ("myEndpoint2", [15], [b"\x0F"]),
-        ("myEndpoint2", [15, 16], [b"\x0F", b"\x10"]),
+        ("myEndpoint", [15, False], [b"\x0f", b""]),
+        ("myEndpoint2", [15], [b"\x0f"]),
+        ("myEndpoint2", [15, 16], [b"\x0f", b"\x10"]),
         (
             "endpoint_5",
             ["WEGLD-abcdef", 789],

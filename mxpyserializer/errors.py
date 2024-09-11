@@ -4,7 +4,6 @@ author: Etienne Wallet
 This module contains the custom errors defined for this package
 """
 
-
 from typing import Any, List, Optional
 
 

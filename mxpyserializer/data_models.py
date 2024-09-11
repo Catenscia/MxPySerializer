@@ -3,6 +3,7 @@ author: Etienne Wallet
 
 This module contains the dataclasses describing the data elements used by the package
 """
+
 from __future__ import annotations
 from dataclasses import dataclass
 from typing import Dict, List
