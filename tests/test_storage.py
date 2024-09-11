@@ -89,3 +89,79 @@ def test_build_nested_storage_key_without_abi(
     result = storage_read.build_nested_storage_bytes_key(storage_name, sub_keys)
     # Then
     assert expected_result == result
+
+
+@pytest.mark.parametrize(
+    "storage_name, mapping_key_type, mapping_key, expected_result",
+    [
+        (
+            "my_map_key",
+            "TokenIdentifier",
+            "WEGLD-abcdef",
+            bytes.fromhex(
+                "6d795f6d61705f6b65792e6d61707065640000000c5745474c442d616263646566"
+            ),
+        ),
+        (
+            "my_map_key",
+            "TokenIdentifier",
+            "MEX-abcdef",
+            bytes.fromhex(
+                "6d795f6d61705f6b65792e6d61707065640000000a4d45582d616263646566"
+            ),
+        ),
+    ],
+)
+def test_build_key_for_map_item(
+    storage_name: str,
+    mapping_key_type: str,
+    mapping_key: Any,
+    expected_result: bytes,
+):
+    # Given
+    # When
+    result = storage_read.build_storage_bytes_key_for_map_item(
+        storage_name, mapping_key_type, mapping_key
+    )
+    # Then
+    assert expected_result == result
+
+
+@pytest.mark.parametrize(
+    "storage_name, item_index, expected_result",
+    [
+        ("my_set_key", 1, b"my_set_key.value\x00\x00\x00\x01"),
+        ("my_set_key", 2, b"my_set_key.value\x00\x00\x00\x02"),
+    ],
+)
+def test_build_key_for_set_item(
+    storage_name: str,
+    item_index: int,
+    expected_result: bytes,
+):
+    # Given
+    # When
+    result = storage_read.build_storage_bytes_key_for_set_item(storage_name, item_index)
+    # Then
+    assert expected_result == result
+
+
+@pytest.mark.parametrize(
+    "storage_name, item_index, expected_result",
+    [
+        ("my_linked_list_key", 1, b"my_linked_list_key.node\x00\x00\x00\x01"),
+        ("my_linked_list_key", 2, b"my_linked_list_key.node\x00\x00\x00\x02"),
+    ],
+)
+def test_build_key_for_linked_list_item(
+    storage_name: str,
+    item_index: int,
+    expected_result: bytes,
+):
+    # Given
+    # When
+    result = storage_read.build_storage_bytes_key_for_linked_list_item(
+        storage_name, item_index
+    )
+    # Then
+    assert expected_result == result
