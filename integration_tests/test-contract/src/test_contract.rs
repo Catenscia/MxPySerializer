@@ -1,5 +1,7 @@
 #![no_std]
 
+pub mod proxy;
+
 use multiversx_sc::hex_literal::hex;
 
 multiversx_sc::imports!();
