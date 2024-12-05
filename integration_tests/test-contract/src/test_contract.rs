@@ -56,6 +56,12 @@ pub enum EnumWithEverything<M: ManagedTypeApi> {
     },
 }
 
+#[derive(TopEncode, TopDecode, NestedEncode, NestedDecode, TypeAbi, Clone)]
+pub struct DecimalStruct<M: ManagedTypeApi> {
+    pub const_decimals: ManagedDecimal<M, ConstDecimals<3>>,
+    pub dyn_decimals: ManagedDecimal<M, NumDecimals>,
+}
+
 /// This contract has only view endpoint that all expects very specific inputs.
 /// This is used to check that the data send to the contract is interpreted as wanted
 #[multiversx_sc::contract]
@@ -234,5 +240,38 @@ pub trait TestContract {
             "Wrong second payment"
         );
         payments
+    }
+
+    #[view]
+    fn endpoint_9(
+        &self,
+        const_decimal_amount: ManagedDecimal<Self::Api, ConstDecimals<3>>,
+        dyn_decimal_amount: ManagedDecimal<Self::Api, NumDecimals>,
+        decimal_struct: DecimalStruct<Self::Api>,
+    ) -> MultiValue3<
+        ManagedDecimal<Self::Api, ConstDecimals<3>>,
+        ManagedDecimal<Self::Api, NumDecimals>,
+        DecimalStruct<Self::Api>,
+    > {
+        let const_expected: ManagedDecimal<Self::Api, ConstDecimals<3>> =
+            ManagedDecimal::const_decimals_from_raw(BigUint::from(123456u64));
+        require!(
+            const_decimal_amount == const_expected,
+            "Wrong const decimal"
+        );
+        require!(
+            decimal_struct.const_decimals == const_expected,
+            "Wrong const decimal in struct"
+        );
+
+        let dyn_expected: ManagedDecimal<Self::Api, NumDecimals> =
+            ManagedDecimal::from_raw_units(BigUint::from(123456u64), 2usize);
+        require!(dyn_decimal_amount == dyn_expected, "Wrong dyn decimal");
+        require!(
+            decimal_struct.dyn_decimals == dyn_expected,
+            "Wrong dyn decimal in struct"
+        );
+
+        (const_decimal_amount, dyn_decimal_amount, decimal_struct).into()
     }
 }

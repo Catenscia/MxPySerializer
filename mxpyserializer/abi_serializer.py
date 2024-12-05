@@ -20,7 +20,7 @@ from multiversx_sdk_network_providers.contract_query_response import (
     ContractQueryResponse,
 )
 
-from mxpyserializer import basic_type, errors
+from mxpyserializer import basic_type, errors, predefined_type
 from mxpyserializer.data_models import AbiEndpoint, AbiField, AbiStruct, AbiEnum
 
 
@@ -227,6 +227,35 @@ class AbiSerializer:
 
         return self.nested_decode_fields(type_definition.fields, data)
 
+    def encode_struct(
+        self, type_definition: AbiStruct, data: Union[Dict, List]
+    ) -> bytes:
+        """
+        Encodes the input data assuming it is a custom struct defined in the
+        ABI. All childs elements of the structures are always nested encoded.
+
+        :param type_definition: definition of the type to encode
+        :type type_definition: AbiStruct
+        :param data: data to encode
+        :type data: Union[Dict, List]
+        :return: encoded struct
+        :rtype: bytes
+        """
+        if len(data) != len(type_definition.fields):
+            raise errors.ElementsNumberMismatch(data, type_definition.fields)
+        if isinstance(data, List):
+            data = {field.name: d for field, d in zip(type_definition.fields, data)}
+        results = bytes()
+        for field in type_definition.fields:
+            try:
+                value = data[field.name]
+            except KeyError as err:
+                raise errors.MissingStuctField(
+                    type_definition.name, field.name
+                ) from err
+            results += self.nested_encode(field.type, value)
+        return results
+
     def encode_custom_struct(self, type_name: str, data: Union[Dict, List]) -> bytes:
         """
         Encodes the input data assuming it is a custom struct defined in the
@@ -243,18 +272,7 @@ class AbiSerializer:
             type_definition = self.structs[type_name]
         except KeyError as err:
             raise errors.UnknownStruct(type_name) from err
-        if len(data) != len(type_definition.fields):
-            raise errors.ElementsNumberMismatch(data, type_definition.fields)
-        if isinstance(data, List):
-            data = {field.name: d for field, d in zip(type_definition.fields, data)}
-        results = bytes()
-        for field in type_definition.fields:
-            try:
-                value = data[field.name]
-            except KeyError as err:
-                raise errors.MissingStuctField(type_name, field.name) from err
-            results += self.nested_encode(field.type, value)
-        return results
+        return self.encode_struct(type_definition, data)
 
     def decode_custom_enum(
         self, type_name: str, data: bytes
@@ -380,6 +398,21 @@ class AbiSerializer:
         if type_name in basic_type.BASIC_TYPES:
             return basic_type.nested_decode_basic(type_name, data)
 
+        managed_decimal_pattern = re.match(r"^ManagedDecimal<(.*)>$", type_name)
+        if managed_decimal_pattern is not None:
+            decimals_str = managed_decimal_pattern.groups()[0]
+            if decimals_str == "usize":
+                decimal_struct, remaining_data = self.nested_decode_fields(
+                    predefined_type.MANAGED_DECIMAL_STRUCT.fields, data
+                )
+            else:
+                raw_value, remaining_data = basic_type.nested_decode_basic(
+                    "BigUint", data
+                )
+                decimal_struct = {"data": raw_value, "decimals": int(decimals_str)}
+            decimal_str = predefined_type.decimal_struct_to_decimal_str(decimal_struct)
+            return decimal_str, remaining_data
+
         list_pattern = re.match(r"^List<(.*)>$", type_name)
         if list_pattern is not None:
             inner_type_name = list_pattern.groups()[0]
@@ -426,6 +459,22 @@ class AbiSerializer:
         """
         if type_name in basic_type.BASIC_TYPES:
             return basic_type.nested_encode_basic(type_name, value)
+
+        managed_decimal_pattern = re.match(r"^ManagedDecimal<(.*)>$", type_name)
+        if managed_decimal_pattern is not None:
+            decimals_str = managed_decimal_pattern.groups()[0]
+            try:
+                decimals = int(decimals_str)
+            except ValueError:
+                decimals = None
+            decimal_struct = predefined_type.decimal_arg_to_decimal_struct(
+                value, decimals
+            )
+            if decimals_str == "usize":  # need to encode the decimals along the value
+                return self.encode_struct(
+                    predefined_type.MANAGED_DECIMAL_STRUCT, decimal_struct
+                )
+            return basic_type.nested_encode_basic("BigUint", decimal_struct["data"])
 
         list_pattern = re.match(r"^List<(.*)>$", type_name)
         if list_pattern is not None:
@@ -528,6 +577,18 @@ class AbiSerializer:
         if type_name.startswith("Option") and len(data) == 0:
             return None
 
+        managed_decimal_pattern = re.match(r"^ManagedDecimal<(.*)>$", type_name)
+        if managed_decimal_pattern is not None:
+            decimals_str = managed_decimal_pattern.groups()[0]
+            try:
+                decimals = int(decimals_str)
+            except ValueError:
+                decimals = None
+            if decimals is not None:
+                raw_biguint = basic_type.top_decode_basic("BigUint", data)
+                decimal_struct = {"data": raw_biguint, "decimals": decimals}
+                return predefined_type.decimal_struct_to_decimal_str(decimal_struct)
+
         # for other cases, we can directly use the nested_decode function
         result, data = self.nested_decode(type_name, data)
         if len(data) != 0:
@@ -595,6 +656,19 @@ class AbiSerializer:
 
         if type_name in self.enums:
             return self.encode_custom_enum(type_name, value, True)
+
+        managed_decimal_pattern = re.match(r"^ManagedDecimal<(.*)>$", type_name)
+        if managed_decimal_pattern is not None:
+            decimals_str = managed_decimal_pattern.groups()[0]
+            try:
+                decimals = int(decimals_str)
+            except ValueError:
+                decimals = None
+            decimal_struct = predefined_type.decimal_arg_to_decimal_struct(
+                value, decimals
+            )
+            if decimals is not None:  # fixed decimals
+                return basic_type.top_encode_basic("BigUint", decimal_struct["data"])
 
         if type_name in basic_type.BASIC_TYPES:
             return basic_type.top_encode_basic(type_name, value)

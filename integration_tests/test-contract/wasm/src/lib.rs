@@ -5,9 +5,9 @@
 ////////////////////////////////////////////////////
 
 // Init:                                 1
-// Endpoints:                           10
+// Endpoints:                           11
 // Async Callback (empty):               1
-// Total number of exported functions:  12
+// Total number of exported functions:  13
 
 #![no_std]
 
@@ -28,6 +28,7 @@ multiversx_sc_wasm_adapter::endpoints! {
         endpoint_6 => endpoint_6
         endpoint_7 => endpoint_7
         endpoint_8 => endpoint_8
+        endpoint_9 => endpoint_9
     )
 }
 

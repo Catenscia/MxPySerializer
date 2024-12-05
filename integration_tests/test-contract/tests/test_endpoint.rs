@@ -4,7 +4,7 @@ mod common;
 use common::constants::*;
 use common::setup_world;
 
-use test_contract::proxy::{DayOfWeek, EnumWithEverything, TestContractProxy};
+use test_contract::proxy::{DayOfWeek, DecimalStruct, EnumWithEverything, TestContractProxy};
 
 #[test]
 fn test_endpoint_1() {
@@ -264,5 +264,40 @@ fn test_endpoint_8() {
         .typed(TestContractProxy)
         .endpoint_8(payments_2)
         .with_result(ExpectError(4, "Wrong second payment"))
+        .run();
+}
+
+#[test]
+fn test_endpoint_9() {
+    // Given
+    let mut world = ScenarioWorld::new();
+    setup_world(&mut world);
+
+    let const_decimal = ManagedDecimal::const_decimals_from_raw(BigUint::from(123456u64));
+
+    let dyn_decimal = ManagedDecimal::from_raw_units(BigUint::from(123456u64), 2usize);
+    let dyn_decimal_2 = ManagedDecimal::from_raw_units(BigUint::from(123456u64), 3usize);
+
+    let decimal_struct = DecimalStruct {
+        const_decimals: const_decimal.clone(),
+        dyn_decimals: dyn_decimal.clone(),
+    };
+
+    // When
+    world
+        .tx()
+        .from(USER_ADDRESS)
+        .to(TEST_CONTRACT_ADDRESS)
+        .typed(TestContractProxy)
+        .endpoint_9(const_decimal.clone(), dyn_decimal, decimal_struct.clone())
+        .run();
+
+    world
+        .tx()
+        .from(USER_ADDRESS)
+        .to(TEST_CONTRACT_ADDRESS)
+        .typed(TestContractProxy)
+        .endpoint_9(const_decimal, dyn_decimal_2, decimal_struct)
+        .with_result(ExpectError(4, "Wrong dyn decimal"))
         .run();
 }

@@ -30,6 +30,7 @@ serializer
 svg
 str
 utils
+utf
 Flaticon
 README
 reusability
