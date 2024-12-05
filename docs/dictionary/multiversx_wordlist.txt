@@ -10,12 +10,14 @@ Elrond
 elrond
 esdt
 ESDT
+ESDTNFTTransfer
 ESDTmapper
 EsdtTransfer
 fn
 init
 LedgerAccount
 localnet
+ManagedDecimal
 mainnet
 Maiar
 mandos
