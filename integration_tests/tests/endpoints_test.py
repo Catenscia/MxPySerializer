@@ -215,7 +215,7 @@ def test_endpoint_7(
         {"name": "Write", "values": [b"\x01\x02\x04\x08", 14]},
         {
             "name": "Struct",
-            "values": [8, b"\x09\x2D", 0, 789484, 485],
+            "values": [8, b"\x09\x2d", 0, 789484, 485],
         },
     ]
 
@@ -249,7 +249,7 @@ def test_endpoint_7(
         {
             "name": "Struct",
             "discriminant": 3,
-            "values": [8, b"\x09\x2D", 0, 789484, 485],
+            "values": [8, b"\x09\x2d", 0, 789484, 485],
         },
     ]
 
@@ -283,3 +283,32 @@ def test_endpoint_8(
         {"token_identifier": "WEGLD-abcdef", "token_nonce": 0, "amount": 89784651},
         {"token_identifier": "MEX-abcdef", "token_nonce": 0, "amount": 184791484},
     ]
+
+
+def test_endpoint_9(
+    proxy_provider: ProxyNetworkProvider,
+    contract_address: Address,
+    abi_serializer: AbiSerializer,
+):
+    # Given
+    endpoint_name = "endpoint_9"
+    args = [
+        "123.456",
+        "1234.56",
+        {"const_decimals": "123.456", "dyn_decimals": "1234.56"},
+    ]
+
+    # When
+    encoded_args = abi_serializer.encode_endpoint_inputs(endpoint_name, args)
+    query = ContractQueryBuilder(
+        contract=contract_address,
+        function=endpoint_name,
+        call_arguments=encoded_args,
+    ).build()
+    response = proxy_provider.query_contract(query)
+    parsed_results = abi_serializer.decode_contract_query_response(
+        endpoint_name, response
+    )
+
+    # Then
+    assert parsed_results == args

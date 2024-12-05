@@ -238,6 +238,25 @@ where
             .argument(&payments)
             .original_result()
     }
+
+    pub fn endpoint_9<
+        Arg0: ProxyArg<ManagedDecimal<Env::Api, ConstDecimals<3>>>,
+        Arg1: ProxyArg<ManagedDecimal<Env::Api, usize>>,
+        Arg2: ProxyArg<DecimalStruct<Env::Api>>,
+    >(
+        self,
+        const_decimal_amount: Arg0,
+        dyn_decimal_amount: Arg1,
+        decimal_struct: Arg2,
+    ) -> TxTypedCall<Env, From, To, NotPayable, Gas, MultiValue3<ManagedDecimal<Env::Api, ConstDecimals<3>>, ManagedDecimal<Env::Api, usize>, DecimalStruct<Env::Api>>> {
+        self.wrapped_tx
+            .payment(NotPayable)
+            .raw_call("endpoint_9")
+            .argument(&const_decimal_amount)
+            .argument(&dyn_decimal_amount)
+            .argument(&decimal_struct)
+            .original_result()
+    }
 }
 
 #[type_abi]
@@ -282,4 +301,14 @@ where
         uint_32: u32,
         uint_64: u64,
     },
+}
+
+#[type_abi]
+#[derive(TopEncode, TopDecode, Clone)]
+pub struct DecimalStruct<Api>
+where
+    Api: ManagedTypeApi,
+{
+    pub const_decimals: ManagedDecimal<Api, ConstDecimals<3>>,
+    pub dyn_decimals: ManagedDecimal<Api, usize>,
 }
