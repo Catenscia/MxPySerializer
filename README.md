@@ -1,6 +1,10 @@
 # MxPySerializer
 MxPySerializer is a python package that serialize and deserialize MultiversX data format by using ABI definitions.
 
+```{warning}
+This repository has been archived, due to new serializers being actively developped by the MultiversX core team
+```
+
 ## Installation
 
 Install MxPySerializer with PyPi
